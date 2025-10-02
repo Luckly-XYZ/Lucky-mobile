@@ -1,0 +1,24 @@
+allprojects {
+    repositories {
+        //google() // 这行注释
+        //avenCentral() //这行也注释，底下三行加上去
+//        google()
+//        mavenCentral()
+        maven { url 'https://maven.aliyun.com/repository/central' }          //新增
+        maven { url 'https://maven.aliyun.com/repository/public' }           //新增
+        maven { url 'https://maven.aliyun.com/repository/google'}            //新增
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin'}     //新增
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

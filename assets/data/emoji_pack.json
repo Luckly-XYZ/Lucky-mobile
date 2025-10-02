@@ -1,0 +1,606 @@
+{
+    "packName": "Emoji 表情包",
+    "type": "emoji",
+    "expressions": [
+        {
+            "id": "001",
+            "name": "微笑",
+            "unicode": "😊",
+            "description": "微笑的表情"
+        },
+        {
+            "id": "002",
+            "name": "大笑",
+            "unicode": "😂",
+            "description": "笑哭的表情"
+        },
+        {
+            "id": "003",
+            "name": "爱心",
+            "unicode": "❤️",
+            "description": "爱心"
+        },
+        {
+            "id": "004",
+            "name": "眨眼",
+            "unicode": "😉",
+            "description": "调皮的眨眼"
+        },
+        {
+            "id": "005",
+            "name": "哭泣",
+            "unicode": "😢",
+            "description": "流泪的表情"
+        },
+        {
+            "id": "006",
+            "name": "害羞",
+            "unicode": "😊",
+            "description": "脸红的微笑"
+        },
+        {
+            "id": "007",
+            "name": "生气",
+            "unicode": "😡",
+            "description": "生气的表情"
+        },
+        {
+            "id": "008",
+            "name": "惊讶",
+            "unicode": "😲",
+            "description": "震惊的表情"
+        },
+        {
+            "id": "009",
+            "name": "睡觉",
+            "unicode": "😴",
+            "description": "困了的表情"
+        },
+        {
+            "id": "010",
+            "name": "思考",
+            "unicode": "🤔",
+            "description": "思考中的表情"
+        },
+        {
+            "id": "011",
+            "name": "调皮",
+            "unicode": "😜",
+            "description": "吐舌头"
+        },
+        {
+            "id": "012",
+            "name": "呕吐",
+            "unicode": "🤮",
+            "description": "恶心想吐"
+        },
+        {
+            "id": "013",
+            "name": "鬼脸",
+            "unicode": "👻",
+            "description": "小幽灵"
+        },
+        {
+            "id": "014",
+            "name": "太阳",
+            "unicode": "☀️",
+            "description": "太阳天气"
+        },
+        {
+            "id": "015",
+            "name": "月亮",
+            "unicode": "🌙",
+            "description": "夜晚的月亮"
+        },
+        {
+            "id": "016",
+            "name": "星星",
+            "unicode": "⭐",
+            "description": "闪亮的星星"
+        },
+        {
+            "id": "017",
+            "name": "彩虹",
+            "unicode": "🌈",
+            "description": "美丽的彩虹"
+        },
+        {
+            "id": "018",
+            "name": "火",
+            "unicode": "🔥",
+            "description": "燃烧的火焰"
+        },
+        {
+            "id": "019",
+            "name": "爆炸",
+            "unicode": "💥",
+            "description": "爆炸特效"
+        },
+        {
+            "id": "020",
+            "name": "便便",
+            "unicode": "💩",
+            "description": "便便表情"
+        },
+        {
+            "id": "021",
+            "name": "鼓掌",
+            "unicode": "👏",
+            "description": "鼓掌表情"
+        },
+        {
+            "id": "022",
+            "name": "OK",
+            "unicode": "👌",
+            "description": "OK 手势"
+        },
+        {
+            "id": "023",
+            "name": "点赞",
+            "unicode": "👍",
+            "description": "竖起大拇指"
+        },
+        {
+            "id": "024",
+            "name": "倒大拇指",
+            "unicode": "👎",
+            "description": "不满意"
+        },
+        {
+            "id": "025",
+            "name": "拳头",
+            "unicode": "👊",
+            "description": "握拳"
+        },
+        {
+            "id": "026",
+            "name": "祈祷",
+            "unicode": "🙏",
+            "description": "双手合十"
+        },
+        {
+            "id": "027",
+            "name": "胜利",
+            "unicode": "✌️",
+            "description": "胜利手势"
+        },
+        {
+            "id": "028",
+            "name": "爱心手势",
+            "unicode": "💖",
+            "description": "手势爱心"
+        },
+        {
+            "id": "029",
+            "name": "握手",
+            "unicode": "🤝",
+            "description": "握手合作"
+        },
+        {
+            "id": "030",
+            "name": "拥抱",
+            "unicode": "🤗",
+            "description": "温暖的拥抱"
+        },
+        {
+            "id": "031",
+            "name": "心碎",
+            "unicode": "💔",
+            "description": "破碎的心"
+        },
+        {
+            "id": "032",
+            "name": "金币",
+            "unicode": "🪙",
+            "description": "金币财富"
+        },
+        {
+            "id": "033",
+            "name": "钱袋",
+            "unicode": "💰",
+            "description": "装满钱袋"
+        },
+        {
+            "id": "034",
+            "name": "信用卡",
+            "unicode": "💳",
+            "description": "支付用信用卡"
+        },
+        {
+            "id": "035",
+            "name": "礼物",
+            "unicode": "🎁",
+            "description": "送出的礼物"
+        },
+        {
+            "id": "036",
+            "name": "蛋糕",
+            "unicode": "🎂",
+            "description": "生日蛋糕"
+        },
+        {
+            "id": "037",
+            "name": "红酒",
+            "unicode": "🍷",
+            "description": "红酒杯"
+        },
+        {
+            "id": "038",
+            "name": "啤酒",
+            "unicode": "🍺",
+            "description": "一杯啤酒"
+        },
+        {
+            "id": "039",
+            "name": "咖啡",
+            "unicode": "☕",
+            "description": "热咖啡"
+        },
+        {
+            "id": "040",
+            "name": "足球",
+            "unicode": "⚽",
+            "description": "足球比赛"
+        },
+        {
+            "id": "041",
+            "name": "篮球",
+            "unicode": "🏀",
+            "description": "篮球运动"
+        },
+        {
+            "id": "042",
+            "name": "羽毛球",
+            "unicode": "🏸",
+            "description": "羽毛球运动"
+        },
+        {
+            "id": "043",
+            "name": "网球",
+            "unicode": "🎾",
+            "description": "网球比赛"
+        },
+        {
+            "id": "044",
+            "name": "吉他",
+            "unicode": "🎸",
+            "description": "演奏吉他"
+        },
+        {
+            "id": "045",
+            "name": "钢琴",
+            "unicode": "🎹",
+            "description": "钢琴键盘"
+        },
+        {
+            "id": "046",
+            "name": "飞机",
+            "unicode": "✈️",
+            "description": "飞行的飞机"
+        },
+        {
+            "id": "047",
+            "name": "火箭",
+            "unicode": "🚀",
+            "description": "快速前进"
+        },
+        {
+            "id": "048",
+            "name": "汽车",
+            "unicode": "🚗",
+            "description": "驾驶汽车"
+        },
+        {
+            "id": "049",
+            "name": "地球",
+            "unicode": "🌍",
+            "description": "地球家园"
+        },
+        {
+            "id": "050",
+            "name": "宇航员",
+            "unicode": "🧑‍🚀",
+            "description": "探索宇宙"
+        },
+        {
+            "id": "051",
+            "name": "机器人",
+            "unicode": "🤖",
+            "description": "可爱的机器人"
+        },
+        {
+            "id": "052",
+            "name": "灯泡",
+            "unicode": "💡",
+            "description": "灵感一现"
+        },
+        {
+            "id": "053",
+            "name": "书",
+            "unicode": "📖",
+            "description": "阅读的书本"
+        },
+        {
+            "id": "054",
+            "name": "铅笔",
+            "unicode": "✏️",
+            "description": "书写的铅笔"
+        },
+        {
+            "id": "055",
+            "name": "信封",
+            "unicode": "✉️",
+            "description": "邮件信封"
+        },
+        {
+            "id": "056",
+            "name": "电话",
+            "unicode": "📞",
+            "description": "传统电话机"
+        },
+        {
+            "id": "057",
+            "name": "手机",
+            "unicode": "📱",
+            "description": "智能手机"
+        },
+        {
+            "id": "058",
+            "name": "钟表",
+            "unicode": "⏰",
+            "description": "闹钟"
+        },
+        {
+            "id": "059",
+            "name": "沙漏",
+            "unicode": "⏳",
+            "description": "流逝的时间"
+        },
+        {
+            "id": "060",
+            "name": "钥匙",
+            "unicode": "🔑",
+            "description": "开锁的钥匙"
+        },
+        {
+            "id": "061",
+            "name": "锁",
+            "unicode": "🔒",
+            "description": "加密的锁"
+        },
+        {
+            "id": "062",
+            "name": "太阳镜",
+            "unicode": "🕶️",
+            "description": "酷炫太阳镜"
+        },
+        {
+            "id": "063",
+            "name": "皇冠",
+            "unicode": "👑",
+            "description": "王者皇冠"
+        },
+        {
+            "id": "064",
+            "name": "钻石",
+            "unicode": "💎",
+            "description": "璀璨钻石"
+        },
+        {
+            "id": "065",
+            "name": "礼服",
+            "unicode": "👗",
+            "description": "漂亮的连衣裙"
+        },
+        {
+            "id": "066",
+            "name": "皮鞋",
+            "unicode": "👞",
+            "description": "正式皮鞋"
+        },
+        {
+            "id": "067",
+            "name": "高跟鞋",
+            "unicode": "👠",
+            "description": "时尚高跟鞋"
+        },
+        {
+            "id": "068",
+            "name": "袜子",
+            "unicode": "🧦",
+            "description": "温暖的袜子"
+        },
+        {
+            "id": "069",
+            "name": "手套",
+            "unicode": "🧤",
+            "description": "冬季手套"
+        },
+        {
+            "id": "070",
+            "name": "帽子",
+            "unicode": "🧢",
+            "description": "棒球帽"
+        },
+        {
+            "id": "071",
+            "name": "口红",
+            "unicode": "💄",
+            "description": "化妆口红"
+        },
+        {
+            "id": "072",
+            "name": "雨伞",
+            "unicode": "☂️",
+            "description": "雨天必备"
+        },
+        {
+            "id": "073",
+            "name": "飞机票",
+            "unicode": "🎫",
+            "description": "机票旅行"
+        },
+        {
+            "id": "074",
+            "name": "地图",
+            "unicode": "🗺️",
+            "description": "世界地图"
+        },
+        {
+            "id": "075",
+            "name": "指南针",
+            "unicode": "🧭",
+            "description": "方向导航"
+        },
+        {
+            "id": "076",
+            "name": "照相机",
+            "unicode": "📷",
+            "description": "拍照相机"
+        },
+        {
+            "id": "077",
+            "name": "麦克风",
+            "unicode": "🎤",
+            "description": "唱歌麦克风"
+        },
+        {
+            "id": "078",
+            "name": "耳机",
+            "unicode": "🎧",
+            "description": "听音乐耳机"
+        },
+        {
+            "id": "079",
+            "name": "电视",
+            "unicode": "📺",
+            "description": "观看电视"
+        },
+        {
+            "id": "080",
+            "name": "游戏手柄",
+            "unicode": "🎮",
+            "description": "玩游戏手柄"
+        },
+        {
+            "id": "081",
+            "name": "纸飞机",
+            "unicode": "🛩️",
+            "description": "飞翔纸飞机"
+        },
+        {
+            "id": "082",
+            "name": "UFO",
+            "unicode": "🛸",
+            "description": "神秘UFO"
+        },
+        {
+            "id": "083",
+            "name": "魔法棒",
+            "unicode": "🪄",
+            "description": "施展魔法"
+        },
+        {
+            "id": "084",
+            "name": "炸弹",
+            "unicode": "💣",
+            "description": "爆炸危险"
+        },
+        {
+            "id": "085",
+            "name": "望远镜",
+            "unicode": "🔭",
+            "description": "探索太空"
+        },
+        {
+            "id": "086",
+            "name": "显微镜",
+            "unicode": "🔬",
+            "description": "科学研究"
+        },
+        {
+            "id": "087",
+            "name": "药丸",
+            "unicode": "💊",
+            "description": "医学药品"
+        },
+        {
+            "id": "088",
+            "name": "注射器",
+            "unicode": "💉",
+            "description": "医疗注射"
+        },
+        {
+            "id": "089",
+            "name": "DNA",
+            "unicode": "🧬",
+            "description": "基因DNA"
+        },
+        {
+            "id": "090",
+            "name": "试管",
+            "unicode": "🧪",
+            "description": "科学实验"
+        },
+        {
+            "id": "091",
+            "name": "手电筒",
+            "unicode": "🔦",
+            "description": "照亮黑暗"
+        },
+        {
+            "id": "092",
+            "name": "剪刀",
+            "unicode": "✂️",
+            "description": "裁剪工具"
+        },
+        {
+            "id": "093",
+            "name": "信号",
+            "unicode": "📶",
+            "description": "信号满格"
+        },
+        {
+            "id": "094",
+            "name": "电池",
+            "unicode": "🔋",
+            "description": "充满电"
+        },
+        {
+            "id": "095",
+            "name": "电脑",
+            "unicode": "💻",
+            "description": "工作电脑"
+        },
+        {
+            "id": "096",
+            "name": "服务器",
+            "unicode": "🖥️",
+            "description": "数据中心"
+        },
+        {
+            "id": "097",
+            "name": "文件夹",
+            "unicode": "📂",
+            "description": "存放文件"
+        },
+        {
+            "id": "098",
+            "name": "打印机",
+            "unicode": "🖨️",
+            "description": "打印文件"
+        },
+        {
+            "id": "099",
+            "name": "硬盘",
+            "unicode": "💾",
+            "description": "存储设备"
+        },
+        {
+            "id": "100",
+            "name": "USB",
+            "unicode": "🔌",
+            "description": "充电连接"
+        }
+    ]
+}

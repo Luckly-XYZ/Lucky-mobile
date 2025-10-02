@@ -1,0 +1,81 @@
+name: flutter_im
+description: A Flutter IM application
+
+publish_to: 'none'
+
+# 版本号
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations: # 本地化
+    sdk: flutter
+  cupertino_icons: ^1.0.2 # 图标
+  get: ^4.6.6  # 用于状态管理和路由
+  get_it: ^8.0.3
+  get_storage: ^2.1.1 # 本地存储
+  workmanager: ^0.5.2 # 后台任务
+  camera: ^0.10.5+9 # 摄像头
+  #shared_preferences: ^2.2.2  # 用于本地存储
+  flutter_secure_storage: ^9.2.4 # 敏感信息存储
+  dio: ^5.3.2  # 网络请求
+  flutter_easyloading: ^3.0.3   # loading 遮盖层
+  provider: ^6.0.5 # 状态管理
+  floor: ^1.5.0 # 数据库orm
+  web_socket_channel: ^2.4.0 # websocket
+  permission_handler: ^11.2.1  # 权限处理
+  audioplayers: ^6.1.1  # 播放声音
+  audio_session: ^0.1.6
+  logger: ^1.0.0  # 日志
+  fast_rsa: ^3.7.1 # rsa加密解密
+  mobile_scanner: ^4.0.1          # 用于扫描二维码
+  image_picker: ^1.0.7    # 用于从相册选择图片
+  flutter_svg: ^2.0.17 # svg图标
+  qr_flutter: ^4.1.0 # 二维码生成
+  webview_flutter: ^4.10.0 # 网页浏览
+  url_launcher: ^6.3.1 # 打开网页或app
+  video_player: ^2.8.2 # 视频播放
+  photo_view: ^0.14.0 # 图片查看
+  flutter_webrtc: ^0.12.8 # webrtc
+  cached_network_image: ^3.3.0 # 图片缓存
+  wakelock_plus: ^1.2.10 # 屏幕常亮
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  floor_generator: ^1.5.0
+  build_runner: ^2.4.14
+
+
+
+# flutter 相关的配置选项
+flutter:
+  # 默认的 Material Design 字体图标
+  uses-material-design: true
+
+  
+
+  # 静态资源
+  assets:
+    - assets/audio/
+    - assets/icons/
+    - assets/data/
+     # - assets/logo.png
+
+  # # 静态资源
+  # assets:
+  #   - assets/images/login/
+
+  # 自定义字体图标（该脚手架没有用这个，用的是 Flutter 自带的默认 Icons）
+  # 使用教程 https://book.flutterchina.club/chapter3/img_and_icon.html#_3-3-2-icon
+  # fonts:
+  #   - family: iconfont
+  #     fonts:
+  #       - asset: assets/icons/iconfont.ttf
+
