@@ -19,7 +19,7 @@ class WebRtcController extends GetxController {
 
   /// 用户自身推流状态 0 未开始  1 成功 2 失败
   final isConnectState = 0.obs;
-  final ApiService _apiService = Get.find<ApiService>();
+  late ApiService _apiService;
 
   // 统一音频采集约束，确保启用回声消除、自动增益控制和噪声抑制
   Map<String, dynamic> mediaConstraints = {
@@ -41,6 +41,12 @@ class WebRtcController extends GetxController {
 
   /// 设备信息
   List devices = [];
+
+  @override
+  void onInit() {
+    super.onInit();
+    _apiService = Get.find<ApiService>();
+  }
 
   /// 添加远程视频（逻辑保持不变）
   Future<bool> addRemoteLive(String url, String webrtcUrl,

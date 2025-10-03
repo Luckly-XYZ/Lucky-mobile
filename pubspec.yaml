@@ -43,6 +43,9 @@ dependencies:
   flutter_webrtc: ^0.12.8 # webrtc
   cached_network_image: ^3.3.0 # 图片缓存
   wakelock_plus: ^1.2.10 # 屏幕常亮
+  flutter_launcher_icons: ^0.13.1  # 应用图标
+  protoc_plugin: ^22.4.0
+  protobuf: ^4.1.0
 
 
 dev_dependencies:
@@ -66,7 +69,13 @@ flutter:
     - assets/audio/
     - assets/icons/
     - assets/data/
+    - assets/logo/
      # - assets/logo.png
+
+
+  # 应用图标
+
+
 
   # # 静态资源
   # assets:
@@ -79,3 +88,8 @@ flutter:
   #     fonts:
   #       - asset: assets/icons/iconfont.ttf
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo/app_icon.png"  # 图标路径
+#  adaptive_icon_background: "#FFFFFF"  # Android 适应性图标背景色

@@ -10,34 +10,25 @@ class LoginPage extends GetView<LoginController> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withOpacity(0.1),
-              Colors.white,
-            ],
-          ),
-        ),
+        color: Colors.white,
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.fromLTRB(
-                24.0, MediaQuery.of(context).size.height * 0.1, 24.0, 24.0),
+                24.0, MediaQuery.of(context).size.height * 0.15, 24.0, 24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _buildLogo(),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
                 SizedBox(
-                  height: 320, // 减小高度从380到320
+                  height: 300,
                   child: TabBarView(
                     controller: controller.tabController,
-                    physics: const NeverScrollableScrollPhysics(), // 禁止滑动切换
+                    physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      _buildLoginForm(context, true), // 密码登录
-                      _buildLoginForm(context, false), // 验证码登录
+                      _buildLoginForm(context, true),
+                      _buildLoginForm(context, false),
                     ],
                   ),
                 ),
@@ -56,35 +47,27 @@ class LoginPage extends GetView<LoginController> {
     return Column(
       children: [
         Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white,
+          width: 80,
+          height: 80,
+          decoration: const BoxDecoration(
+            color: Color(0xFF409EFF),
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 2,
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
-          child: Center(
+          child: const Center(
             child: Icon(
               Icons.chat_bubble_outline,
-              size: 50,
-              color: Get.theme.primaryColor,
+              size: 40,
+              color: Colors.white,
             ),
           ),
         ),
         const SizedBox(height: 16),
-        Text(
+        const Text(
           '欢迎登录',
           style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Get.theme.primaryColor,
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF333333),
           ),
         ),
       ],
@@ -97,7 +80,7 @@ class LoginPage extends GetView<LoginController> {
       children: [
         Text(
           controller.currentAuthType == AuthType.password ? '还没有账号？' : '已有账号？',
-          style: TextStyle(color: Colors.grey[600]),
+          style: const TextStyle(color: Color(0xFF666666), fontSize: 14),
         ),
         TextButton(
           onPressed: () {
@@ -109,6 +92,11 @@ class LoginPage extends GetView<LoginController> {
             controller.currentAuthType == AuthType.password
                 ? '验证码登录'
                 : '账号密码登录',
+            style: const TextStyle(
+              color: Color(0xFF409EFF),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -116,19 +104,17 @@ class LoginPage extends GetView<LoginController> {
   }
 
   Widget _buildLoginForm(BuildContext context, bool isPasswordMode) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            spreadRadius: 5,
-            blurRadius: 15,
-            offset: const Offset(0, 3),
+            color: const Color(0xFF409EFF).withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -139,27 +125,28 @@ class LoginPage extends GetView<LoginController> {
             controller: controller.principalController,
             decoration: InputDecoration(
               labelText: isPasswordMode ? '账号' : '手机号',
-              labelStyle: TextStyle(color: Colors.grey[600]),
+              labelStyle: const TextStyle(color: Color(0xFF999999)),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(4),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(4),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.primaryColor, width: 1.5),
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: Color(0xFF409EFF), width: 1.5),
               ),
               prefixIcon: Icon(
-                isPasswordMode ? Icons.person : Icons.phone,
-                color: theme.primaryColor,
+                isPasswordMode ? Icons.person_outline : Icons.phone_outlined,
+                color: const Color(0xFF409EFF),
+                size: 20,
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: const Color(0xFFf5f7fa),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
             keyboardType:
                 isPasswordMode ? TextInputType.text : TextInputType.phone,
@@ -170,27 +157,28 @@ class LoginPage extends GetView<LoginController> {
             controller: controller.credentialsController,
             decoration: InputDecoration(
               labelText: isPasswordMode ? '密码' : '验证码',
-              labelStyle: TextStyle(color: Colors.grey[600]),
+              labelStyle: const TextStyle(color: Color(0xFF999999)),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(4),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(4),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.primaryColor, width: 1.5),
+                borderRadius: BorderRadius.circular(4),
+                borderSide: const BorderSide(color: Color(0xFF409EFF), width: 1.5),
               ),
               prefixIcon: Icon(
-                isPasswordMode ? Icons.lock : Icons.security,
-                color: theme.primaryColor,
+                isPasswordMode ? Icons.lock_outline : Icons.security_outlined,
+                color: const Color(0xFF409EFF),
+                size: 20,
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: const Color(0xFFf5f7fa),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               suffixIcon: !isPasswordMode
                   ? Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -199,19 +187,20 @@ class LoginPage extends GetView<LoginController> {
                                 ? controller.sendVerificationCode
                                 : null,
                             style: TextButton.styleFrom(
-                              foregroundColor: theme.primaryColor,
+                              foregroundColor: const Color(0xFF409EFF),
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8),
+                              minimumSize: const Size(0, 30),
                             ),
                             child: Text(
                               controller.canSendCode.value
                                   ? '发送验证码'
                                   : '${controller.countDown}s',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 color: controller.canSendCode.value
-                                    ? theme.primaryColor
-                                    : Colors.grey,
+                                    ? const Color(0xFF409EFF)
+                                    : const Color(0xFFcccccc),
                               ),
                             ),
                           )),
@@ -225,7 +214,7 @@ class LoginPage extends GetView<LoginController> {
             onSubmitted: (_) => controller.handleLogin(),
           ),
           if (isPasswordMode) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Obx(() => Checkbox(
@@ -233,16 +222,21 @@ class LoginPage extends GetView<LoginController> {
                       onChanged: (value) {
                         controller.rememberCredentials.value = value ?? false;
                       },
-                      activeColor: theme.primaryColor,
+                      activeColor: const Color(0xFF409EFF),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                     )),
                 GestureDetector(
                   onTap: () {
                     controller.rememberCredentials.value =
                         !controller.rememberCredentials.value;
                   },
-                  child: Text(
+                  child: const Text(
                     '记住密码',
-                    style: TextStyle(color: Colors.grey[700]),
+                    style: TextStyle(
+                      color: Color(0xFF666666), 
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
@@ -257,12 +251,13 @@ class LoginPage extends GetView<LoginController> {
                       : controller.handleLogin,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: theme.primaryColor,
+                    backgroundColor: const Color(0xFF409EFF),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFFa0cfff),
                   ),
                   child: controller.isLoading.value
                       ? const SizedBox(
@@ -278,7 +273,7 @@ class LoginPage extends GetView<LoginController> {
                           '登录',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                             color: Colors.white,
                           ),
                         ),

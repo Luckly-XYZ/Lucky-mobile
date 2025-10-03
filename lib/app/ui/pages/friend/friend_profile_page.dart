@@ -218,7 +218,7 @@ class FriendProfilePage extends StatelessWidget {
     final response =
         await _apiService.getFriendInfo({'fromId': userId, 'toId': friendId});
 
-    if (response != null && response['status'] == 200) {
+    if (response != null && response['code'] == 200) {
       return Friend.fromJson(response['data']);
     }
 

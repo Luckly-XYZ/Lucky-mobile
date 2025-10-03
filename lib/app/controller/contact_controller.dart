@@ -11,7 +11,7 @@ class ContactController extends GetxController {
   final RxList<Friend> contactsList = <Friend>[].obs;
   final RxBool isLoading = false.obs;
   final storage = GetStorage();
-  final ApiService _apiService = Get.find<ApiService>();
+  late ApiService _apiService;
 
   // 数据库实例
   final db = GetIt.instance<AppDatabase>();
@@ -28,13 +28,10 @@ class ContactController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _apiService = Get.find<ApiService>();
 
     final storedUserId = storage.read(KEY_USER_ID);
     if (storedUserId != null) userId.value = storedUserId;
-
-    // 初始化时加载联系人列表和好友请求列表
-    // fetchContacts();
-    // fetchFriendRequests();
   }
 
   Future<void> fetchContacts() async {
@@ -42,17 +39,17 @@ class ContactController extends GetxController {
       isLoading.value = true;
 
       final response = await _apiService.getFriendList({
-        'userId': userId.value, // TODO: 替换为实际的用户ID
+        'userId': userId.value,
         'sequence': '0'
       });
 
-      if (response != null && response['status'] == 200) {
+      if (response != null && response['code'] == 200) {
         final List friendList = response['data'] ?? [];
 
         contactsList.value =
             friendList.map((friend) => Friend.fromJson(friend)).toList();
       } else {
-        throw '获取好友列表失败';
+        throw Exception(response?['message'] ?? '获取好友列表失败');
       }
     } catch (e) {
       Get.snackbar('错误', '获取联系人列表失败: $e');
@@ -66,14 +63,14 @@ class ContactController extends GetxController {
   }
 
   Future<void> fetchFriendRequests() async {
-    if (userId.value.isEmpty) return; // 如果没有userId则不执行
+    if (userId.value.isEmpty) return;
 
     try {
       isLoadingRequests.value = true;
       final response =
           await _apiService.getRequestFriendList({'userId': userId.value});
 
-      if (response != null && response['status'] == 200) {
+      if (response != null && response['code'] == 200) {
         final List requests = response['data'] ?? [];
         friendRequests.value =
             requests.map((request) => FriendRequest.fromJson(request)).toList();
@@ -85,7 +82,7 @@ class ContactController extends GetxController {
 
         updateNewFriendRequestCount(pendingRequests);
       } else {
-        throw '获取好友请求列表失败';
+        throw Exception(response?['message'] ?? '获取好友请求列表失败');
       }
     } catch (e) {
       Get.snackbar('错误', '获取好友请求列表失败: $e', snackPosition: SnackPosition.TOP);
@@ -96,12 +93,13 @@ class ContactController extends GetxController {
 
   Future<void> handleFriendRequest(String requestId) async {
     try {
-      // TODO: 调用API处理好友请求
       final response = await _apiService
-          .addFriend({'fromId': userId.value, 'toId': requestId});
+          .requestContact({'fromId': userId.value, 'toId': requestId});
 
-      if (response != null && response['status'] == 200) {
+      if (response != null && response['code'] == 200) {
         Get.snackbar('成功', '已发送添加好友请求');
+      } else {
+        throw Exception(response?['message'] ?? '发送好友请求失败');
       }
     } catch (e) {
       Get.snackbar('错误', '处理好友请求失败: $e');
@@ -110,14 +108,20 @@ class ContactController extends GetxController {
 
   Future<void> handleFriendApprove(String requestId, String toId) async {
     try {
-      final response = await _apiService.approveFriendRequest({
+      final response = await _apiService.approveContact({
         'id': requestId,
         'fromId': userId.value,
         'toId': toId,
         'approveStatus': '1',
       });
-      if (response != null && response['status'] == 200) {
+      if (response != null && response['code'] == 200) {
         Get.snackbar('成功', '已接受好友请求');
+        // 重新获取好友列表
+        await fetchContacts();
+        // 重新获取好友请求
+        await fetchFriendRequests();
+      } else {
+        throw Exception(response?['message'] ?? '处理好友请求失败');
       }
     } catch (e) {
       Get.snackbar('错误', '处理好友请求失败: $e');
@@ -133,14 +137,14 @@ class ContactController extends GetxController {
       final response = await _apiService
           .getFriendInfo({'fromId': userId.value, 'toId': keyword});
 
-      if (response != null && response['status'] == 200) {
+      if (response != null && response['code'] == 200) {
         if (response['data'] != null) {
           searchResults.value.add(Friend.fromJson(response['data']));
         } else {
           Get.snackbar('错误', '搜索用户不存在');
         }
       } else {
-        throw '搜索用户失败';
+        throw Exception(response?['message'] ?? '搜索用户失败');
       }
     } catch (e) {
       Get.snackbar('错误', '搜索用户失败: $e');
@@ -151,18 +155,37 @@ class ContactController extends GetxController {
 
   Future<void> sendFriendRequest(String targetUserId) async {
     try {
-      // final response = await _apiService.sendFriendRequest({
-      //   'userId': userId.value,
-      //   'targetUserId': targetUserId,
-      // });
+      final response = await _apiService.requestContact({
+        'fromId': userId.value,
+        'toId': targetUserId,
+      });
 
-      // if (response != null && response['status'] == 200) {
-      //   Get.snackbar('成功', '好友请求已发送');
-      // } else {
-      //   throw '发送好友请求失败';
-      // }
+      if (response != null && response['code'] == 200) {
+        Get.snackbar('成功', '好友请求已发送');
+      } else {
+        throw Exception(response?['message'] ?? '发送好友请求失败');
+      }
     } catch (e) {
       Get.snackbar('错误', '发送好友请求失败: $e');
+    }
+  }
+  
+  Future<void> deleteFriend(String friendId) async {
+    try {
+      final response = await _apiService.deleteContact({
+        'fromId': userId.value,
+        'toId': friendId,
+      });
+
+      if (response != null && response['code'] == 200) {
+        Get.snackbar('成功', '已删除好友');
+        // 重新获取好友列表
+        await fetchContacts();
+      } else {
+        throw Exception(response?['message'] ?? '删除好友失败');
+      }
+    } catch (e) {
+      Get.snackbar('错误', '删除好友失败: $e');
     }
   }
 }

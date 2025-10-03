@@ -60,6 +60,12 @@ flutter pub get
 flutter run
 ```
 
+### 生成 ProtoBuf 
+
+````bash
+protoc -I=proto --dart_out=lib/proto proto/im_connect.proto google/protobuf/any.proto google/protobuf/struct.proto
+````
+
 ## 📁 项目结构
 
 ```

@@ -25,7 +25,8 @@ class MyPage extends StatelessWidget {
                 String username = userInfo['name'] ?? '未登录';
                 String signature = userInfo['selfSignature'] ?? '这个人很神秘...';
                 String avatarUrl = userInfo['avatar'] ?? '';
-                String gender = userInfo['gender'] ?? '';
+                // 修复类型转换问题，确保 gender 是字符串类型
+                String gender = userInfo['gender']?.toString() ?? '';
 
                 Icon? genderIcon;
                 if (gender == '1') {

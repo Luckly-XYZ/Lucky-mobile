@@ -1,11 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:protobuf/protobuf.dart';
 
 import '../../config/app_config.dart';
 import '../controller/user_controller.dart';
+import '../../proto/im_connect.pb.dart';
+import '../../proto/im_connect_json.dart';
+
 
 /// WebSocket状态
 enum SocketStatus {
@@ -13,6 +19,9 @@ enum SocketStatus {
   socketStatusFailed, // 失败
   socketStatusClosed, // 连接关闭
 }
+
+/// 序列化类型
+enum SerializationType { json, protobuf }
 
 class WebSocketService extends GetxService {
   /// 单例对象
@@ -26,6 +35,11 @@ class WebSocketService extends GetxService {
   final int _reconnectCount = 10; // 重连次数，默认10次
   int _reconnectTimes = 0; // 重连计数器
   Timer? _reconnectTimer; // 重连定时器
+
+  // 序列化类型，默认为JSON
+  SerializationType serializationType = AppConfig.protocolType == "proto"
+      ? SerializationType.protobuf
+      : SerializationType.json;
 
   // 使用 RxString 来存储最新消息
   final RxString latestMessage = ''.obs;
@@ -47,7 +61,12 @@ class WebSocketService extends GetxService {
       Function? onMessage,
       Function? onError,
       String? uid,
-      String? token}) {
+      String? token,
+      SerializationType? serializationType}) {
+    this.serializationType = serializationType ??
+        (AppConfig.protocolType == "proto"
+            ? SerializationType.protobuf
+            : SerializationType.json);
     this.onOpen = onOpen;
     this.onMessage = onMessage;
     this.onError = onError;
@@ -104,8 +123,49 @@ class WebSocketService extends GetxService {
 
   /// WebSocket接收消息回调
   webSocketOnMessage(data) {
-    latestMessage.value = data.toString();
-    onMessage?.call(data);
+    if (serializationType == SerializationType.protobuf) {
+      // Protobuf 模式，处理二进制数据
+      try {
+        if (data is Uint8List) {
+          IMConnectMessage im_message = IMConnectMessage.fromBuffer(data);
+          latestMessage.value = jsonEncode(im_message.toJson()) ;
+          onMessage?.call( latestMessage.value);
+        } else if (data is List<int>) {
+          final message = IMConnectMessage.fromBuffer(Uint8List.fromList(data));
+          latestMessage.value = message.toString();
+          onMessage?.call(message);
+        } else {
+          Get.log('Protobuf模式下收到非二进制数据: ${data.runtimeType}');
+          latestMessage.value = data.toString();
+          onMessage?.call(data);
+        }
+      } catch (e) {
+        Get.log('Protobuf消息解析失败: $e');
+      }
+    } else {
+      // JSON 模式，处理文本数据
+      try {
+        String textData;
+        if (data is String) {
+          textData = data;
+        } else if (data is List<int>) {
+          textData = utf8.decode(data);
+        } else if (data is Uint8List) {
+          textData = utf8.decode(data);
+        } else {
+          Get.log('JSON模式下收到未知类型数据: ${data.runtimeType}');
+          latestMessage.value = data.toString();
+          onMessage?.call(data);
+          return;
+        }
+
+        final jsonData = jsonDecode(textData);
+        latestMessage.value = textData;
+        onMessage?.call(jsonData);
+      } catch (e) {
+        Get.log('JSON消息解析失败: $e');
+      }
+    }
   }
 
   /// WebSocket关闭连接回调
@@ -134,12 +194,21 @@ class WebSocketService extends GetxService {
   /// 心跳
   void sentHeart() {
     final token = Get.find<UserController>().token.value;
-    final heartbeatMessage = {
-      'code': 1001,
-      'token': token,
-      'data': 'heartbeat'
-    };
-    sendMessage(jsonEncode(heartbeatMessage));
+
+    if (serializationType == SerializationType.protobuf) {
+      // 使用 Protobuf 序列化
+      final heartbeatMessage =
+          IMConnectMessage(code: 1001, token: token, message: 'heartbeat');
+      sendMessage(heartbeatMessage.writeToBuffer());
+    } else {
+      // 使用 JSON 序列化
+      final heartbeatMessage = {
+        'code': 1001,
+        'token': token,
+        'data': 'heartbeat'
+      };
+      sendMessage(jsonEncode(heartbeatMessage));
+    }
   }
 
   /// 销毁心跳
@@ -212,8 +281,22 @@ class WebSocketService extends GetxService {
 
   /// 注册 WebSocket 连接
   void register(String token) {
-    final registerMessage = {'code': 1000, 'token': token, 'data': 'registrar'};
-    sendMessage(jsonEncode(registerMessage));
+    if (serializationType == SerializationType.protobuf) {
+      // 使用 Protobuf 序列化
+      final registerMessage =
+          IMConnectMessage(code: 1000, token: token, message: 'registrar', deviceType: AppConfig.deviceType);
+      sendMessage(registerMessage.writeToBuffer());
+    } else {
+      // 使用 JSON 序列化
+      final registerMessage = {
+        'code': 1000,
+        'token': token,
+        'data': 'registrar',
+        'deviceType': AppConfig.deviceType
+      };
+      sendMessage(jsonEncode(registerMessage));
+    }
+
     // 注册成功后启动心跳
     initHeartBeat();
   }

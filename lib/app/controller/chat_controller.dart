@@ -31,7 +31,7 @@ class ChatController extends GetxController {
 
   // 数据库实例
   final db = GetIt.instance<AppDatabase>();
-  final ApiService _apiService = Get.find<ApiService>();
+  late ApiService _apiService;
 
   // 当前用户ID
   var userId = ''.obs;
@@ -45,8 +45,7 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // 在初始化时自动加载聊天列表
-    // _initializeChats();
+    _apiService = Get.find<ApiService>();
   }
 
   @override
@@ -57,7 +56,7 @@ class ChatController extends GetxController {
   /// 创建或更新聊天会话
   /// @param dto 消息数据传输对象
   /// @param isMe 是否是自己发送的消息
-  handleCreateOrUpdateChat(MessageReceiveDto dto, bool isMe) async {
+  Future<void> handleCreateOrUpdateChat(MessageReceiveDto dto, bool isMe) async {
     // id 必须为自己
     String? id = dto.fromId == userId.value ? dto.fromId : userId.value;
     // targetId 必须为会话的对象
@@ -174,7 +173,7 @@ class ChatController extends GetxController {
   /// 设置消息列表，支持分页加载
   /// @param chat 当前会话
   /// @param loadMore 是否加载更多
-  handleSetMessageList(Chats chat, {bool loadMore = false}) async {
+  Future<void> handleSetMessageList(Chats chat, {bool loadMore = false}) async {
     try {
       if (!loadMore) {
         messageList.clear();
@@ -217,7 +216,6 @@ class ChatController extends GetxController {
       currentPage++;
 
       // 按时间排序消息列表
-      //messageList.sort((a, b) => (b.messageTime ?? 0).compareTo(a.messageTime ?? 0));
       messageList.refresh();
     } catch (e) {
       errorMessage.value = '加载消息列表失败: $e';
@@ -226,46 +224,8 @@ class ChatController extends GetxController {
     }
   }
 
-  // 获取消息列表
-  Future<void> getMessageList() async {
-    // messageList.clear(); // 清空现有列表，避免重复
-    // List<MessageReceiveDto>? messages = await db.singleMessageDao.getAllMessages(userId.value);
-    // if (messages != null && messages.isNotEmpty) {
-    //   messageList.addAll(messages);
-    // }
-  }
-
-  // Future<void> addChat(Chats chat) async {
-  //   try {
-  //     await db.chatsDao.insertChat(chat);
-  //     chatList.add(chat);
-  //     Get.log('添加聊天成功: ${chat.chatId}');
-  //   } catch (e) {
-  //     errorMessage.value = '添加聊天失败: $e';
-  //   } finally {
-  //     await _initializeChats();
-  //   }
-  // }
-
-  // Future<void> updateChatById(Chats newChat) async {
-  //   try {
-  //     //await db.chatsDao.updateChat(chat);
-  //     int index =
-  //         chatList.indexWhere((chat) => chat.chatId == newChat.chatId);
-  //     if (index != -1) {
-  //       chatList[index] = newChat;
-  //     }
-  //     Get.log('更新聊天成功: ${newChat.chatId}');
-  //   } catch (e) {
-  //     errorMessage.value = '更新聊天失败: $e';
-  //   } finally {
-  //     await _initializeChats();
-  //   }
-  // }
-
   Future<void> removeChat(Chats chat) async {
     try {
-      //await db.chatsDao.deleteChat(chat);
       chatList.remove(chat);
       Get.log('移除聊天成功: ${chat.chatId}');
     } catch (e) {
@@ -342,7 +302,6 @@ class ChatController extends GetxController {
     await db.chatsDao.updateChat(chat);
 
     // 更新会话列表
-    // messageList.clear();
     chatList.refresh();
 
     // 调用后台API标记消息已读
@@ -415,9 +374,6 @@ class ChatController extends GetxController {
               'friendId': dto.fromId,
               'isInitiator': false
             });
-            // 发送接受通话事件
-            // Get.find<EventBus>().emit(
-            //     'call_accepted', {'fromId': dto.fromId, 'toId': userId.value});
           }
         },
         onReject: () async {
@@ -432,7 +388,6 @@ class ChatController extends GetxController {
     }
 
     if (dto.type == MessageContentType.rtcAccept.code) {
-      //Get.snackbar('通话提示', '对方已接受通话');
       // 发送接受通话事件
       Get.find<EventBus>()
           .emit('call_accept', {'fromId': dto.fromId, 'toId': userId.value});
@@ -442,21 +397,18 @@ class ChatController extends GetxController {
     if (dto.type == MessageContentType.rtcReject.code) {
       Get.snackbar('通话提示', '对方已拒绝通话');
       Get.find<EventBus>().emit('call_reject', dto);
-      //Get.back(); // 关闭视频页面
     }
 
     // 取消通话
     if (dto.type == MessageContentType.rtcCancel.code) {
       Get.snackbar('通话提示', '对方已取消通话');
       Get.find<EventBus>().emit('call_cancel', dto);
-      //Get.back(); // 关闭视频页面
     }
 
     // 挂断通话
     if (dto.type == MessageContentType.rtcHangup.code) {
       Get.snackbar('通话提示', '通话已结束');
       Get.find<EventBus>().emit('call_hangup', dto);
-      //Get.back(); // 关闭视频页面
     }
   }
 
@@ -471,8 +423,8 @@ class ChatController extends GetxController {
       final messagesResponse = await _apiService.getMessageList(
           {'fromId': userId.value, 'sequence': lastMessageTime});
 
-      if (messagesResponse != null && messagesResponse['status'] == 200) {
-        final Map<String, dynamic> newMessages = messagesResponse['data'] ?? [];
+      if (messagesResponse != null && messagesResponse['code'] == 200) {
+        final Map<String, dynamic> newMessages = messagesResponse['data'] ?? {};
 
         // 处理单聊和群聊消息
         _processSyncedMessages(newMessages, MessageType.singleMessage.code);
@@ -483,7 +435,7 @@ class ChatController extends GetxController {
     }
   }
 
-// 新增辅助方法处理消息同步
+  // 新增辅助方法处理消息同步
   void _processSyncedMessages(
       Map<String, dynamic> newMessages, int messageType) {
     if (newMessages.isNotEmpty &&
@@ -495,7 +447,7 @@ class ChatController extends GetxController {
         message.putIfAbsent('messageType', () => messageType);
         message['messageBody'] = json.decode(message['messageBody']);
         MessageReceiveDto dto = MessageReceiveDto.fromJson(message);
-        // TODO: 处理消息更新
+        // 处理消息更新
         handleCreateOrUpdateChat(dto, false);
       }
     }
@@ -503,9 +455,6 @@ class ChatController extends GetxController {
 
   // 获取最后一条消息的时间戳
   Future<int> _getLastMessageTimestamp() async {
-    // 获取最后一条会话消息时间
-    // final lastChat = await db.chatsDao.getLastChat(userId.value);
-
     // 获取最后一条消息时间
     final lastMessage = await db.singleMessageDao.getLastMessage(userId.value);
 
@@ -522,8 +471,6 @@ class ChatController extends GetxController {
           : lastGroupMessage!.messageTime;
     }
 
-    // // 返回最新的时间戳
-    // return lastChat?.sequence ?? 0;
     return 0;
   }
 
@@ -569,24 +516,24 @@ class ChatController extends GetxController {
 
     return isSuccess;
   }
+  
+  /// 撤回消息
+  Future<void> recallMessage(String messageId, int messageType) async {
+    try {
+      final res = await _apiService.recallMessage({
+        'fromId': userId.value,
+        'messageId': messageId,
+        'messageType': messageType,
+      });
+      
+      if (res?['status'] == 200) {
+        Get.snackbar('成功', '消息已撤回');
+        // TODO: 更新UI显示撤回消息的提示
+      } else {
+        throw Exception(res?['message'] ?? '撤回消息失败');
+      }
+    } catch (e) {
+      Get.snackbar('错误', '撤回消息失败: $e');
+    }
+  }
 }
-
-// Future<void> insertOrUpdateChat(Chats chat) async {
-//   try {
-//     // 检查是否存在相同id的聊天
-//     final existingChat =
-//         chatList.firstWhereOrNull((c) => c.chatId == chat.chatId);
-
-//     if (existingChat != null) {
-//       // 如果存在，更新聊天
-//       await updateChatById(chat);
-//     } else {
-//       // 如果不存在，添加聊天
-//       await addChat(chat);
-//     }
-//   } catch (e) {
-//     errorMessage.value = '添加或更新聊天失败: $e';
-//   } finally {
-//     //await _initializeChats();
-//   }
-// }

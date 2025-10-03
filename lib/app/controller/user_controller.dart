@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_im/app/api/api_service.dart';
 import 'package:flutter_im/app/models/message_receive.dart';
+import 'package:flutter_im/utils/objects.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -182,10 +183,11 @@ class UserController extends GetxController with WidgetsBindingObserver {
       var response = await _apiService.login(loginData);
       Get.log("🔹 登录接口响应: $response");
 
-      if (response != null && response['data'] != null) {
-        var data = response['data'];
-        if (data['token'] != null && data['userId'] != null) {
-          token.value = data['token'];
+      if (Objects.isNotEmpty(response) &&
+          Objects.isNotEmpty(response?['data'])) {
+        var data = response?['data'];
+        if (  Objects.isNotBlank(data['accessToken'])  && Objects.isNotBlank(data['userId'])) {
+          token.value = data['accessToken'];
           userId.value = data['userId'];
           startConnect();
           return true;
@@ -327,11 +329,13 @@ class UserController extends GetxController with WidgetsBindingObserver {
   Future<bool> scanQrCode(String qrCodeContent) async {
     try {
       final response = await _apiService.scanQRCode({
-        "qrcode": qrCodeContent,
+        "qrCode": qrCodeContent,
         "userId": userId.value,
       });
 
-      return response != null && response['status'] == 200 && response['data']['status'] == "success";
+      return response != null &&
+          response['code'] == 200 &&
+          response['data']['status'] == "AUTHORIZED";
     } catch (error, stackTrace) {
       Get.log("扫描二维码异常: $error\n$stackTrace");
       return false;

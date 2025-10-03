@@ -13,7 +13,7 @@ class SearchsController extends GetxController {
 
   // 数据库实例
   final db = GetIt.instance<AppDatabase>();
-  final ApiService _apiService = Get.find<ApiService>();
+  late ApiService _apiService;
   final storage = GetStorage();
   final searchResults = <SearchMessageResult>[].obs;
   final searchHistory = <String>[].obs;
@@ -23,6 +23,7 @@ class SearchsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _apiService = Get.find<ApiService>();
     loadSearchHistory();
   }
 
@@ -44,7 +45,7 @@ class SearchsController extends GetxController {
       searchHistory.removeLast();
     }
 
-    await _storage.write(_searchHistoryKey, searchHistory);
+    await _storage.write(_searchHistoryKey, searchResults);
   }
 
   // 清除搜索历史
@@ -58,22 +59,20 @@ class SearchsController extends GetxController {
     if (keyword.trim().isEmpty) return;
 
     isSearching.value = true;
+    searchResults.clear();
 
     final storedUserId = storage.read(KEY_USER_ID);
 
     try {
-      // TODO: 实现真实的搜索逻辑
-      // 1. 搜索单聊消息
+      // 搜索单聊消息
       final singleMessages =
           await db.singleMessageDao.searchMessages(keyword, storedUserId);
 
-      // 2. 搜索群聊消息
+      // 搜索群聊消息
       final groupMessages =
           await db.groupMessageDao.searchMessages(keyword, storedUserId);
 
-      Get.log("aaaa");
-
-      // 3. 整理搜索结果
+      // 整理搜索结果
       final Map<String, SearchMessageResult> resultMap = {};
 
       // 处理单聊消息
@@ -85,71 +84,30 @@ class SearchsController extends GetxController {
           final response = await _apiService
               .getFriendInfo({'fromId': storedUserId, 'toId': chatId});
 
-          if (response != null && response['status'] == 200) {
+          if (response != null && response['code'] == 200) {
             Friend friend = Friend.fromJson(response['data']);
             resultMap[chatId] = SearchMessageResult(
               id: chatId,
               name: friend.name ?? "",
-              // 假设消息中包含发送者名称
               avatar: friend.avatar ?? "",
-              // 假设消息中包含头像
               messageCount: 0,
               messages: [],
             );
           }
         }
 
-        resultMap[chatId]!.messages.add(message);
-        resultMap[chatId]!.messageCount++;
+        if (resultMap.containsKey(chatId)) {
+          resultMap[chatId]!.messages.add(message);
+          resultMap[chatId]!.messageCount++;
+        }
       }
 
       // 将Map转换为List并更新searchResults
       searchResults.value = resultMap.values.toList();
 
       await saveSearch(keyword);
-
-      // // 处理群聊消息
-      // for (final message in groupMessages) {
-      //   final groupId = message.groupId;
-
-      //   if (!resultMap.containsKey(groupId)) {
-      //     resultMap[groupId] = SearchMessageResult(
-      //       id: groupId,
-      //       name: message.groupName, // 假设消息中包含群组名称
-      //       avatar: message.groupAvatar, // 假设消息中包含群组头像
-      //       messageCount: 0,
-      //       messages: [],
-      //       isGroup: true,
-      //     );
-      //   }
-
-      //   resultMap[groupId]!.messages.add(message);
-      //   resultMap[groupId]!.messageCount++;
-      // }
-
-      // 3. 整理搜索结果
-      // TODO: 根据消息分组整理结果
-      // searchResults.value = [
-      //   SearchMessageResult(
-      //     id: "user1",
-      //     name: "张三",
-      //     avatar: "https://example.com/avatar1.jpg",
-      //     messageCount: 3,
-      //     messages: [],
-      //   ),
-      //   SearchMessageResult(
-      //     id: "user2",
-      //     name: "李四",
-      //     avatar: "https://example.com/avatar2.jpg",
-      //     messageCount: 5,
-      //     messages: [],
-      //   ),
-      // ];
-
-      await saveSearch(keyword);
     } catch (e) {
-      // TODO: 错误处理
-      print(e);
+      Get.snackbar('搜索失败', '搜索过程中出现错误: $e');
     } finally {
       isSearching.value = false;
     }

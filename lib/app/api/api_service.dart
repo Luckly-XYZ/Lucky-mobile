@@ -70,28 +70,42 @@ class ApiService extends HttpService {
 
   /// **获取好友列表**
   Future<Map<String, dynamic>?> getFriendList(Map<String, dynamic> data) {
-    return get('/service/api/v1/friend/list', params: data);
+    return get('/service/api/v1/relationship/contacts/list', params: data);
+  }
+
+  /// **获取群列表**
+  Future<Map<String, dynamic>?> getGroupList(Map<String, dynamic> data) {
+    return get('/service/api/v1/relationship/groups/list', params: data);
+  }
+
+  /// **获取好友添加请求列表**
+  Future<Map<String, dynamic>?> getRequestFriendList(Map<String, dynamic> params) {
+    return get('/service/api/v1/relationship/newFriends/list', params: params);
   }
 
   /// **获取好友信息**
   Future<Map<String, dynamic>?> getFriendInfo(Map<String, dynamic> data) {
-    return post('/service/friend/find', data: data);
+    return post('/service/api/v1/relationship/getFriendInfo', data: data);
   }
 
-  /// **添加好友**
-  Future<Map<String, dynamic>?> addFriend(Map<String, dynamic> data) {
-    return post('/service/friend/add', data: data);
+  /// **搜索好友信息**
+  Future<Map<String, dynamic>?> searchFriendInfoList(Map<String, dynamic> data) {
+    return post('/service/api/v1/relationship/search/getFriendInfoList', data: data);
   }
 
-  /// **获取好友请求列表**
-  Future<Map<String, dynamic>?> getRequestFriendList(
-      Map<String, dynamic> params) {
-    return get('/service/friend/request', params: params);
+  /// **请求添加好友**
+  Future<Map<String, dynamic>?> requestContact(Map<String, dynamic> data) {
+    return post('/service/api/v1/relationship/requestContact', data: data);
   }
 
-  /// **处理好友请求**
-  Future<Map<String, dynamic>?> approveFriendRequest(Map<String, String> map) {
-    return post('/service/friend/approve', data: map);
+  /// **同意或拒绝好友请求**
+  Future<Map<String, dynamic>?> approveContact(Map<String, dynamic> data) {
+    return post('/service/api/v1/relationship/approveContact', data: data);
+  }
+
+  /// **删除好友**
+  Future<Map<String, dynamic>?> deleteContact(Map<String, dynamic> data) {
+    return post('/service/api/v1/relationship/deleteFriendById', data: data);
   }
 
   // ====================================
@@ -124,7 +138,7 @@ class ApiService extends HttpService {
 
   /// 发送单聊消息
   Future<Map<String, dynamic>?> sendSingleMessage(Map<String, dynamic> data) {
-    return post('/service/api/v1/message/private', data: data);
+    return post('/service/api/v1/message/single', data: data);
   }
 
   /// 发送群聊消息
@@ -132,19 +146,29 @@ class ApiService extends HttpService {
     return post('/service/api/v1/message/group', data: data);
   }
 
+  /// 撤回消息
+  Future<Map<String, dynamic>?> recallMessage(Map<String, dynamic> data) {
+    return post('/service/api/v1/message/recall', data: data);
+  }
+
   /// 获取群成员
   Future<Map<String, dynamic>?> getGroupMember(Map<String, dynamic> data) {
-    return post('/service/api/v1/message/group/member', data: data);
+    return post('/service/api/v1/group/member', data: data);
+  }
+
+  /// 同意或拒绝群聊邀请
+  Future<Map<String, dynamic>?> approveGroup(Map<String, dynamic> data) {
+    return post('/service/api/v1/group/approve', data: data);
   }
 
   /// 退出群聊
   Future<Map<String, dynamic>?> quitGroup(Map<String, dynamic> data) {
-    return post('/service/api/v1/message/group/quit', data: data);
+    return post('/service/api/v1/group/quit', data: data);
   }
 
   /// 邀请群成员
   Future<Map<String, dynamic>?> inviteGroupMember(Map<String, dynamic> data) {
-    return post('/service/api/v1/message/group/invite', data: data);
+    return post('/service/api/v1/group/invite', data: data);
   }
 
   /// 获取消息列表
@@ -159,7 +183,7 @@ class ApiService extends HttpService {
 
   /// 发送视频消息
   Future<Map<String, dynamic>?> sendCallMessage(Map<String, dynamic> data) {
-    return post('/service/api/v1/message/video', data: data);
+    return post('/service/api/v1/message/media/video', data: data);
   }
 
   // ====================================
@@ -167,9 +191,9 @@ class ApiService extends HttpService {
   // ====================================
 
   /// 文件上传
-  // Future<Map<String, dynamic>?> uploadFile(FormData data) {
-  //   return upload('/service/api/v1/file/formUpload', data);
-  // }
+  Future<Map<String, dynamic>?> uploadFile(FormData data) {
+    return post('/service/api/v1/file/formUpload', data: data);
+  }
 
   // ====================================
   // ⚠️ 异常上报
@@ -178,10 +202,6 @@ class ApiService extends HttpService {
   Future<Map<String, dynamic>?> exceptionReport(Map<String, dynamic> data) {
     return get('/service/api/v1/tauri/exception/report', params: data);
   }
-
-// ====================================
-// 📂 文件相关 API
-// ====================================
 
 // ====================================
 // 📂 webrtc 相关 API

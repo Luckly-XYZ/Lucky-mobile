@@ -21,7 +21,7 @@ class LoginController extends GetxController
   final secureStorage = const FlutterSecureStorage();
 
   // 用户
-  UserController userController = Get.find<UserController>();
+  late UserController userController;
 
   late TabController tabController;
   final principalController = TextEditingController();
@@ -33,12 +33,16 @@ class LoginController extends GetxController
   final RxInt countDown = 60.obs;
   Timer? _timer;
 
-  AuthType get currentAuthType =>
-      tabController.index == 0 ? AuthType.password : AuthType.verifyCode;
+  // AuthType get currentAuthType =>
+  //     tabController.index == 0 ? AuthType.password : AuthType.verifyCode;
+
+  AuthType get currentAuthType =>  tabController.index == 0 ? AuthType.password : AuthType.verifyCode;
+
 
   @override
   void onInit() {
     super.onInit();
+    userController = Get.find<UserController>();
     tabController = TabController(length: 2, vsync: this);
     tabController.addListener(_handleTabChange);
     loadPublicKey();
@@ -155,7 +159,7 @@ class LoginController extends GetxController
   }
 
   Future<void> loadPublicKey() async {
-    userController.getPublicKey();
+    await userController.getPublicKey();
   }
 
   Future<void> loadSavedCredentials() async {

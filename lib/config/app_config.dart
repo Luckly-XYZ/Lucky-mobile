@@ -3,11 +3,11 @@ class AppConfig {
 
   // API 相关配置192.168.8.43
   static const String baseApi = '/api';
-  static const String apiServer = 'https://$baseUrl:9191';
-  static const String wsServer = 'wss://$baseUrl:9191/im';
-  static const String meetWsServer = 'wss://$baseUrl:9191/meet';
+  static const String apiServer = 'http://$baseUrl:9191';
+  static const String wsServer = 'ws://$baseUrl:9191/im';
+  static const String meetWsServer = 'ws://$baseUrl:9191/meet';
   static const String webRtcServer = 'webRTC://$baseUrl/live/';
-  static const String srsServer = 'https://$baseUrl:1980';
+  static const String srsServer = 'http://$baseUrl:1980';
 
   // 应用信息
   static const String appName = 'IM';
@@ -15,7 +15,8 @@ class AppConfig {
   static const String appDescription = '即时通讯';
   static const String appIcon = 'assets/logo.png';
   static const String appCopyright = '© 2023 im. All rights reserved.';
-  static const String equipmentType = 'mobile'; // 修改为移动端
+  static const String deviceType = 'mobile'; // 修改为移动端
+  static const String protocolType = 'proto';
   static const String defaultUrl = 'https://www.bing.com'; // 默认url
 
   // 存储相关
