@@ -17,11 +17,24 @@ Lucky是一款基于Flutter开发的即时通讯(IM)应用，支持一对一聊�
 
 ## 🖼 项目预览
 
-![](picture/微信图片_20251002182915_113_167.jpg)
-
-![](picture/微信图片_20251002182914_111_167.jpg)
-
-![](picture/微信图片_20251004101621_49486_139.jpg)
+<table>
+  <tr>
+    <td align="center">
+    <img src="picture/微信图片_20251004101621_49486_139.jpg" style="zoom: 50%;" />
+    </td>
+    <td align="center">
+      <img src="picture/微信图片_20251002182915_113_167.jpg" style="zoom:50%;" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="picture/微信图片_20251004103355_119_167.jpg" style="zoom:50%;" />
+    </td>
+    <td align="center">
+      <img src="picture/微信图片_20251004103346_118_167.jpg" style="zoom:50%;" />
+    </td>
+  </tr>
+</table>
 
 ## 🛠 技术栈
 
