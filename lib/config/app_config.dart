@@ -3,11 +3,11 @@ class AppConfig {
 
   // API 相关配置192.168.8.43
   static const String baseApi = '/api';
-  static const String apiServer = 'http://$baseUrl:9191';
-  static const String wsServer = 'ws://$baseUrl:9191/im';
-  static const String meetWsServer = 'ws://$baseUrl:9191/meet';
+  static const String apiServer = 'https://$baseUrl:9190';
+  static const String wsServer = 'wss://$baseUrl:9190/im';
+  static const String meetWsServer = 'wss://$baseUrl:9190/meet';
   static const String webRtcServer = 'webRTC://$baseUrl/live/';
-  static const String srsServer = 'http://$baseUrl:1980';
+  static const String srsServer = 'https://$baseUrl:1980';
 
   // 应用信息
   static const String appName = 'IM';

@@ -39,6 +39,8 @@ class _VideoCallPageState extends State<VideoCallPage>
   late final String _friendId; // 对方用户的ID
   late final bool _isInitiator; // 是否为通话发起方
   bool _isAudioEnabled = false; // 音频是否开启
+  bool _isRemoteSuccess = false; // 远程流是否成功
+  int cameraIndex = 0; // 相机索引
 
   @override
   bool get wantKeepAlive => true;
@@ -113,6 +115,7 @@ class _VideoCallPageState extends State<VideoCallPage>
       if (!remoteSuccess) {
         Get.log('远程视频连接失败');
       }
+      _isRemoteSuccess = remoteSuccess;
     } catch (e) {
       Get.log('启动远程视频流失败: $e');
     }
@@ -173,26 +176,42 @@ class _VideoCallPageState extends State<VideoCallPage>
       await SystemChrome.setPreferredOrientations(
           [DeviceOrientation.portraitUp]);
 
-      await Get.find<ApiService>().sendCallMessage({
-        'fromId': _userId,
-        'toId': _friendId,
-        'type': MessageContentType.rtcHangup.code
-      });
+      // 发送挂断消息给对方
+      if (_userId.isNotEmpty && _friendId.isNotEmpty) {
+        try {
+          await Get.find<ApiService>().sendCallMessage({
+            'fromId': _userId,
+            'toId': _friendId,
+            'type': _isRemoteSuccess
+                ? IMessageContentType.rtcHangup.code
+                : IMessageContentType.rtcCancel.code
+          });
+        } catch (e) {
+          Get.log('发送挂断消息时出错: $e');
+        }
+      }
     } catch (e) {
       Get.log('关闭视频时出错: $e');
+    } finally {
+      // 确保返回上一页
+      Get.back();
     }
   }
 
   @override
   void dispose() {
+    // 移除事件监听
     _eventBus.off('call_accept');
     _eventBus.off('call_reject');
     _eventBus.off('call_cancel');
     _eventBus.off('call_hangup');
 
-    WakelockPlus.disable(); // 关闭屏幕常亮
-    _closeVideo();
+    // 关闭屏幕常亮
+    WakelockPlus.disable();
+
+    // 删除控制器实例
     Get.delete<WebRtcController>();
+
     super.dispose();
   }
 
@@ -353,7 +372,7 @@ class _VideoCallPageState extends State<VideoCallPage>
 
   /// 处理摄像头切换事件
   Future<void> _handleCameraSwitch() async {
-    final currentId = controller.selectedVideoInputId;
+    final currentId = controller.cameraIndex;
     final isFront = currentId?.contains('1') ?? true;
     final newDeviceId = controller.getVideoDevice(front: !isFront);
     await controller.selectVideoInput(newDeviceId);

@@ -79,7 +79,8 @@ class ApiService extends HttpService {
   }
 
   /// **获取好友添加请求列表**
-  Future<Map<String, dynamic>?> getRequestFriendList(Map<String, dynamic> params) {
+  Future<Map<String, dynamic>?> getRequestFriendList(
+      Map<String, dynamic> params) {
     return get('/service/api/v1/relationship/newFriends/list', params: params);
   }
 
@@ -89,8 +90,10 @@ class ApiService extends HttpService {
   }
 
   /// **搜索好友信息**
-  Future<Map<String, dynamic>?> searchFriendInfoList(Map<String, dynamic> data) {
-    return post('/service/api/v1/relationship/search/getFriendInfoList', data: data);
+  Future<Map<String, dynamic>?> searchFriendInfoList(
+      Map<String, dynamic> data) {
+    return post('/service/api/v1/relationship/search/getFriendInfoList',
+        data: data);
   }
 
   /// **请求添加好友**

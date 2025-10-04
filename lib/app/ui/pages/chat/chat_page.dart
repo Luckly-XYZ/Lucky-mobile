@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,60 +8,37 @@ import '../../../controller/user_controller.dart';
 import '../../../models/chats.dart';
 import '../../../routes/app_routes.dart';
 import '../../widgets/chat/chat_item.dart';
+import '../../widgets/icon/icon_font.dart';
 
+
+/// 聊天页面，显示会话列表并支持跳转到聊天详情
+/// 特性：
+/// - 显示用户头像、用户名及 WebSocket 连接状态。
+/// - 支持搜索、创建群聊、扫一扫和添加好友功能。
+/// - 使用 [ChatItem] 显示会话，支持点击进入聊天详情。
+/// - 使用 [PopupMenuButton] 实现带箭头的弹出菜单。
 class ChatPage extends GetView<ChatController> {
   const ChatPage({super.key});
+
+  // 常量定义
+  static const _avatarSize = kSize36; // 头像尺寸
+  static const _avatarBorderRadius = 6.0; // 头像圆角
+  static const _appBarHeight = kToolbarHeight; // AppBar 高度
+  static const _chatItemPadding = EdgeInsets.symmetric(horizontal: kSize10, vertical: kSize6); // 聊天项外边距
+  static const _menuWidth = 150.0; // 弹出菜单宽度
+  static const _emptyText = '暂无聊天记录'; // 空状态提示
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(context),
-      body: Obx(() {
-        return _buildChatList(controller.chatList);
-      }),
+      body: Obx(() => _buildChatList(context, controller.chatList)),
     );
   }
 
-  Widget _buildChatList(List<Chats> chatList) {
-    if (chatList.isEmpty) {
-      return const Center(
-        child: Text(
-          '暂无聊天记录',
-          style: TextStyle(
-            fontSize: kSize16,
-            color: Colors.black54,
-          ),
-        ),
-      );
-    }
+  // --- UI 构建方法 ---
 
-    return ListView.builder(
-      itemCount: chatList.length,
-      itemBuilder: (context, index) {
-        final chat = chatList[index];
-        return GestureDetector(
-          onTap: () => _navigateToChatScreen(context, chat),
-          child: Container(
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: kSize10,
-                vertical: kSize6,
-              ),
-              child: ChatItem(chats: chat),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _navigateToChatScreen(BuildContext context, Chats chat) {
-    controller.setCurrentChat(chat);
-    Get.toNamed("${Routes.HOME}${Routes.MESSAGE}");
-  }
-
-  /// 构建AppBar，并在右侧添加加号按钮
+  /// 构建 AppBar，包含头像、用户名和操作按钮
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
@@ -71,233 +49,169 @@ class ChatPage extends GetView<ChatController> {
           final avatarUrl = userInfo['avatar'] ?? '';
 
           return Row(
-            children: <Widget>[
-              _buildAvatarButton(context, username, avatarUrl),
-              _buildUserInfo(username),
+            children: [
+              _buildAvatar(context, username, avatarUrl),
+              _buildUserInfo(context, username),
             ],
           );
         },
       ),
       actions: [
-        // 添加搜索按钮
         IconButton(
-          icon: const Icon(Icons.search, size: 26),
-          onPressed: () {
-            Get.toNamed("${Routes.HOME}${Routes.SEARCH}");
-          },
+          icon: Iconfont.buildIcon(icon: Iconfont.search, size: 26),
+          onPressed: () => Get.toNamed('${Routes.HOME}${Routes.SEARCH}'),
+          tooltip: '搜索',
         ),
-        // 使用 Builder 获取加号按钮的局部上下文
-        Builder(
-          builder: (buttonContext) {
-            return IconButton(
-              icon: const Icon(Icons.add, size: 28),
-              onPressed: () {
-                _showPopupMenu(buttonContext);
-              },
-            );
-          },
-        ),
+        _buildPopupMenuButton(context),
         const SizedBox(width: 8),
       ],
     );
   }
 
-  /// 构建头像按钮
-  Widget _buildAvatarButton(
-      BuildContext context, String username, String avatarUrl) {
+  /// 构建头像
+  Widget _buildAvatar(BuildContext context, String username, String avatarUrl) {
     return GestureDetector(
       onTap: () => Scaffold.of(context).openDrawer(),
-      child: Container(
-        width: kSize36,
-        height: kSize36,
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.circular(6), // 矩形时添加圆角
-          image: avatarUrl.isNotEmpty
-              ? DecorationImage(
-                  image: NetworkImage(avatarUrl),
-                  fit: BoxFit.cover,
-                )
-              : null,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_avatarBorderRadius),
+        child: CachedNetworkImage(
+          imageUrl: avatarUrl,
+          width: _avatarSize,
+          height: _avatarSize,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            color: Colors.grey[300],
+            child: Iconfont.buildIcon(icon: Iconfont.person, size: 24, color: Colors.grey),
+          ),
+          errorWidget: (context, url, error) {
+            debugPrint('加载头像失败: $error');
+            return Container(
+              color: Colors.grey[300],
+              child: Iconfont.buildIcon(icon: Iconfont.person, size: 24, color: Colors.grey),
+            );
+          },
         ),
       ),
     );
   }
 
-  /// 构建显示用户名的控件
-  Widget _buildUserInfo(String username) {
+  /// 构建用户名和连接状态
+  Widget _buildUserInfo(BuildContext context, String username) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.only(left: 12),
+        child: Text(
+          username,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold) ?? const TextStyle(fontSize: kSize20, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  /// 构建弹出菜单按钮
+  Widget _buildPopupMenuButton(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: Iconfont.buildIcon(icon: Iconfont.add, size: 28),
+      tooltip: '更多操作',
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+      ),
+      offset: const Offset(0, kToolbarHeight),
+      itemBuilder: (context) => _buildMenuItems(),
+      onSelected: (value) => _handleMenuSelection(context, value),
+    );
+  }
+
+  /// 构建弹出菜单项
+  List<PopupMenuItem<String>> _buildMenuItems() {
+    return [
+      PopupMenuItem<String>(
+        value: 'create_group',
         child: Row(
           children: [
-            Text(
-              username,
-              style: const TextStyle(
-                fontSize: kSize20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            // const SizedBox(width: 4),
-            // // 添加 WebSocket 连接状态
-            // Obx(() {
-            //   final webSocketService = Get.find<WebSocketService>();
-            //   return Text(
-            //     webSocketService.isConnected ? '(已连接)' : '(离线)',
-            //     style: TextStyle(
-            //       fontSize: kSize12,
-            //       //color: webSocketService.isConnected ? Colors.green : Colors.grey,
-            //     ),
-            //   );
-            // }),
-            // const Spacer(), // 添加 Spacer 来推动前面的内容靠左
+            Iconfont.buildIcon(icon: Iconfont.add, size: 20, color: Colors.black54),
+            const SizedBox(width: 12),
+            const Text('创建群聊'),
           ],
         ),
       ),
-    );
+      PopupMenuItem<String>(
+        value: 'scan',
+        child: Row(
+          children: [
+            Iconfont.buildIcon(icon: Iconfont.scan, size: 20, color: Colors.black54),
+            const SizedBox(width: 12),
+            const Text('扫一扫'),
+          ],
+        ),
+      ),
+      PopupMenuItem<String>(
+        value: 'add_friend',
+        child: Row(
+          children: [
+            Iconfont.buildIcon(icon: Iconfont.addFriend, size: 20, color: Colors.black54),
+            const SizedBox(width: 12),
+            const Text('加好友/群'),
+          ],
+        ),
+      ),
+    ];
   }
 
-  /// 弹出菜单，显示在加号按钮正下方
-  void _showPopupMenu(BuildContext buttonContext) async {
-    final RenderBox button = buttonContext.findRenderObject() as RenderBox;
-    final RenderBox overlay = Navigator.of(buttonContext)
-        .overlay!
-        .context
-        .findRenderObject() as RenderBox;
-    final Offset buttonPosition =
-        button.localToGlobal(Offset.zero, ancestor: overlay);
-    final Size buttonSize = button.size;
-
-    const menuWidth = 150.0;
-    // 计算箭头位置，使其位于按钮中心
-    final double arrowOffset = menuWidth - buttonSize.width / 2 + 20; // 箭头位置偏右
-
-    final RelativeRect position = RelativeRect.fromLTRB(
-      buttonPosition.dx - menuWidth + buttonSize.width, // 菜单右对齐按钮
-      buttonPosition.dy + buttonSize.height,
-      buttonPosition.dx,
-      buttonPosition.dy,
-    );
-
-    final String? selectedValue = await showMenu<String>(
-      context: buttonContext,
-      position: position,
-      shape: ArrowMenuBorder(
-        arrowOffset: Offset(arrowOffset, 0),
-      ),
-      elevation: 8,
-      constraints: const BoxConstraints(minWidth: menuWidth),
-      items: <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(
-          value: 'create_group',
-          child: Row(
-            children: [
-              Icon(Icons.group_add, color: Colors.black87),
-              SizedBox(width: 12),
-              Text('创建群聊'),
-            ],
-          ),
-        ),
-        const PopupMenuItem<String>(
-          value: 'scan',
-          child: Row(
-            children: [
-              Icon(Icons.qr_code_scanner, color: Colors.black87),
-              SizedBox(width: 12),
-              Text('扫一扫'),
-            ],
-          ),
-        ),
-        const PopupMenuItem<String>(
-          value: 'add_friend',
-          child: Row(
-            children: [
-              Icon(Icons.person_add, color: Colors.black87),
-              SizedBox(width: 12),
-              Text('加好友/群'),
-            ],
-          ),
-        ),
-      ],
-    );
-
-    // 处理选中的菜单项
-    if (selectedValue != null && buttonContext.mounted) {
-      switch (selectedValue) {
-        case 'create_group':
-          // TODO: 实现创建群聊
-          break;
-        case 'scan':
-          Get.toNamed("${Routes.HOME}${Routes.SCAN}");
-          break;
-        case 'add_friend':
-          Get.toNamed("${Routes.HOME}${Routes.ADD_FRIEND}");
-          // TODO: 实现加好友/群
-          break;
-      }
+  /// 处理菜单选择
+  void _handleMenuSelection(BuildContext context, String value) {
+    if (!context.mounted) return;
+    switch (value) {
+      case 'create_group':
+        Get.snackbar('提示', '创建群聊功能待实现'); // TODO: 实现创建群聊
+        break;
+      case 'scan':
+        Get.toNamed('${Routes.HOME}${Routes.SCAN}');
+        break;
+      case 'add_friend':
+        Get.toNamed('${Routes.HOME}${Routes.ADD_FRIEND}');
+        break;
     }
   }
-}
 
-class ArrowMenuBorder extends ShapeBorder {
-  final double arrowWidth;
-  final double arrowHeight;
-  final double borderRadius;
-  final Offset arrowOffset;
+  /// 构建聊天列表
+  Widget _buildChatList(BuildContext context, List<Chats> chatList) {
+    if (chatList.isEmpty) {
+      return _buildEmptyState(context);
+    }
 
-  const ArrowMenuBorder({
-    this.arrowWidth = 12,
-    this.arrowHeight = 8,
-    this.borderRadius = 8,
-    this.arrowOffset = const Offset(0, 0),
-  });
-
-  @override
-  EdgeInsetsGeometry get dimensions => EdgeInsets.only(top: arrowHeight);
-
-  @override
-  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => Path();
-
-  @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
-    rect = Rect.fromPoints(
-      rect.topLeft + Offset(0, arrowHeight),
-      rect.bottomRight,
+    return ListView.builder(
+      cacheExtent: 1000, // 缓存 1000 像素，优化滚动性能
+      itemCount: chatList.length,
+      itemBuilder: (context, index) {
+        final chat = chatList[index];
+        return GestureDetector(
+          onTap: () => _navigateToChatScreen(context, chat),
+          child: Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: Padding(
+              padding: _chatItemPadding,
+              child: ChatItem(chats: chat),
+            ),
+          ),
+        );
+      },
     );
-
-    return Path()
-      ..moveTo(rect.left + borderRadius, rect.top)
-      // 绘制顶部箭头
-      ..lineTo(rect.left + arrowOffset.dx - arrowWidth / 2, rect.top)
-      ..lineTo(rect.left + arrowOffset.dx, rect.top - arrowHeight)
-      ..lineTo(rect.left + arrowOffset.dx + arrowWidth / 2, rect.top)
-      // 绘制圆角矩形
-      ..lineTo(rect.right - borderRadius, rect.top)
-      ..arcToPoint(
-        Offset(rect.right, rect.top + borderRadius),
-        radius: Radius.circular(borderRadius),
-      )
-      ..lineTo(rect.right, rect.bottom - borderRadius)
-      ..arcToPoint(
-        Offset(rect.right - borderRadius, rect.bottom),
-        radius: Radius.circular(borderRadius),
-      )
-      ..lineTo(rect.left + borderRadius, rect.bottom)
-      ..arcToPoint(
-        Offset(rect.left, rect.bottom - borderRadius),
-        radius: Radius.circular(borderRadius),
-      )
-      ..lineTo(rect.left, rect.top + borderRadius)
-      ..arcToPoint(
-        Offset(rect.left + borderRadius, rect.top),
-        radius: Radius.circular(borderRadius),
-      );
   }
 
-  @override
-  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+  /// 构建空状态提示
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Text(
+        _emptyText,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black54) ?? const TextStyle(fontSize: kSize16, color: Colors.black54),
+      ),
+    );
+  }
 
-  @override
-  ShapeBorder scale(double t) => this;
+  /// 跳转到聊天详情页面
+  void _navigateToChatScreen(BuildContext context, Chats chat) {
+    controller.setCurrentChat(chat);
+    Get.toNamed('${Routes.HOME}${Routes.MESSAGE}');
+  }
 }

@@ -7,51 +7,59 @@ import 'package:get/get.dart';
 import '../routes/app_routes.dart';
 import 'user_controller.dart';
 
+/// 登录类型枚举
 enum AuthType {
   password, // 密码登录
-  verifyCode // 验证码登录
+  verifyCode, // 验证码登录
 }
 
+/// 登录控制器，管理登录页面逻辑，包括密码/验证码登录、凭证存储和验证码倒计时
 class LoginController extends GetxController
     with GetSingleTickerProviderStateMixin {
-  static const String KEY_SAVED_USERNAME = 'saved_username';
-  static const String KEY_SAVED_PASSWORD = 'saved_password';
+  // 常量定义
+  static const _keySavedUsername = 'saved_username';
+  static const _keySavedPassword = 'saved_password';
+  static const _phoneRegExp = r'^1[3-9]\d{9}$'; // 手机号正则表达式
+  static const _countdownSeconds = 60; // 验证码倒计时（秒）
 
-  //final storage = GetStorage();
-  final secureStorage = const FlutterSecureStorage();
+  // 依赖注入
+  final _secureStorage = const FlutterSecureStorage();
+  late final UserController _userController;
 
-  // 用户
-  late UserController userController;
+  // 控制器和响应式状态
+  late final TabController tabController; // 切换密码/验证码登录
+  final TextEditingController principalController =
+      TextEditingController(); // 用户名或手机号
+  final TextEditingController credentialsController =
+      TextEditingController(); // 密码或验证码
+  final RxBool isLoading = false.obs; // 登录加载状态
+  final RxBool rememberCredentials = false.obs; // 是否记住密码
+  final RxBool canSendCode = true.obs; // 是否可发送验证码
+  final RxInt countDown = _countdownSeconds.obs; // 验证码倒计时
+  Timer? countdownTimer; // 验证码倒计时定时器
 
-  late TabController tabController;
-  final principalController = TextEditingController();
-  final credentialsController = TextEditingController();
-
-  final RxBool isLoading = false.obs;
-  final RxBool rememberCredentials = false.obs;
-  final RxBool canSendCode = true.obs;
-  final RxInt countDown = 60.obs;
-  Timer? _timer;
-
-  // AuthType get currentAuthType =>
-  //     tabController.index == 0 ? AuthType.password : AuthType.verifyCode;
-
-  AuthType get currentAuthType =>  tabController.index == 0 ? AuthType.password : AuthType.verifyCode;
-
+  /// 当前登录类型
+  AuthType get currentAuthType =>
+      tabController.index == 0 ? AuthType.password : AuthType.verifyCode;
 
   @override
   void onInit() {
     super.onInit();
-    userController = Get.find<UserController>();
+
+    /// 初始化依赖和控制器
+    _userController = Get.find<UserController>();
     tabController = TabController(length: 2, vsync: this);
     tabController.addListener(_handleTabChange);
-    loadPublicKey();
-    loadSavedCredentials();
+
+    /// 加载公钥和已保存的凭证
+    _loadPublicKey();
+    _loadSavedCredentials();
   }
 
   @override
   void onClose() {
-    _timer?.cancel();
+    /// 清理资源
+    countdownTimer?.cancel();
     tabController.removeListener(_handleTabChange);
     tabController.dispose();
     principalController.dispose();
@@ -59,73 +67,66 @@ class LoginController extends GetxController
     super.onClose();
   }
 
-  void _handleTabChange() {
-    if (tabController.indexIsChanging) {
-      principalController.clear();
-      credentialsController.clear();
-    }
-  }
+  // --- 登录处理 ---
 
+  /// 处理登录请求
   Future<void> handleLogin() async {
     if (isLoading.value) return;
 
-    if (principalController.text.isEmpty ||
-        credentialsController.text.isEmpty) {
-      String message =
-          currentAuthType == AuthType.password ? '请输入账号和密码' : '请输入手机号和验证码';
-      Get.snackbar('提示', message);
-      return;
-    }
-
-    if (currentAuthType == AuthType.verifyCode) {
-      final phoneRegExp = RegExp(r'^1[3-9]\d{9}$');
-      if (!phoneRegExp.hasMatch(principalController.text)) {
-        Get.snackbar('提示', '请输入正确的手机号格式');
-        return;
-      }
-    }
+    if (!_validateInput()) return;
 
     isLoading.value = true;
-
     try {
-      String authType = currentAuthType == AuthType.password ? 'form' : 'sms';
-      bool loginRes = await userController.login(
+      final authType = currentAuthType == AuthType.password ? 'form' : 'sms';
+      final success = await _userController.login(
         principalController.text,
         credentialsController.text,
         authType,
       );
 
-      if (loginRes) {
+      if (success) {
         if (currentAuthType == AuthType.password) {
-          if (rememberCredentials.value) {
-            await saveCredentials(
-              principalController.text,
-              credentialsController.text,
-            );
-          } else {
-            await clearSavedCredentials();
-          }
+          await _handleCredentialsStorage();
         }
-
-        try {
-          await userController.getUserInfo();
-          Get.offNamed(Routes.HOME);
-        } catch (e) {
-          Get.snackbar('错误', '获取用户信息失败，请重新登录');
-        }
+        await _navigateToHome();
       }
     } catch (e) {
-      Get.snackbar('错误', '登录失败: ${e.toString()}');
+      _showError('登录失败: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  void startCountDown() {
-    canSendCode.value = false;
-    countDown.value = 60;
+  // --- 验证码管理 ---
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+  /// 发送验证码
+  Future<void> sendVerificationCode() async {
+    if (!canSendCode.value || principalController.text.isEmpty) {
+      _showError('请输入手机号');
+      return;
+    }
+
+    if (!_isValidPhoneNumber()) {
+      _showError('请输入正确的手机号格式');
+      return;
+    }
+
+    try {
+      await _userController.sendVerificationCode(principalController.text);
+      Get.snackbar('提示', '验证码已发送');
+      _startCountdown();
+    } catch (e) {
+      _showError('发送验证码失败: $e');
+    }
+  }
+
+  /// 开始验证码倒计时
+  void _startCountdown() {
+    canSendCode.value = false;
+    countDown.value = _countdownSeconds;
+
+    countdownTimer?.cancel();
+    countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (countDown.value == 0) {
         timer.cancel();
         canSendCode.value = true;
@@ -135,39 +136,15 @@ class LoginController extends GetxController
     });
   }
 
-  Future<void> sendVerificationCode() async {
-    if (!canSendCode.value) return;
+  // --- 凭证管理 ---
 
-    if (principalController.text.isEmpty) {
-      Get.snackbar('提示', '请输入手机号');
-      return;
-    }
-
-    final phoneRegExp = RegExp(r'^1[3-9]\d{9}$');
-    if (!phoneRegExp.hasMatch(principalController.text)) {
-      Get.snackbar('提示', '请输入正确的手机号格式');
-      return;
-    }
-
+  /// 加载保存的凭证
+  Future<void> _loadSavedCredentials() async {
     try {
-      await userController.sendVerificationCode(principalController.text);
-      Get.snackbar('提示', '验证码已发送');
-      startCountDown();
-    } catch (e) {
-      Get.snackbar('错误', '发送验证码失败: ${e.toString()}');
-    }
-  }
-
-  Future<void> loadPublicKey() async {
-    await userController.getPublicKey();
-  }
-
-  Future<void> loadSavedCredentials() async {
-    try {
-      final savedCredentials = await getSavedCredentials();
-      if (savedCredentials != null) {
-        principalController.text = savedCredentials['username']!;
-        credentialsController.text = savedCredentials['password']!;
+      final credentials = await _getSavedCredentials();
+      if (credentials != null) {
+        principalController.text = credentials['username']!;
+        credentialsController.text = credentials['password']!;
         rememberCredentials.value = true;
         if (tabController.index != 0) {
           tabController.animateTo(0);
@@ -178,26 +155,90 @@ class LoginController extends GetxController
     }
   }
 
-  Future<void> saveCredentials(String username, String password) async {
-    await secureStorage.write(key: KEY_SAVED_USERNAME, value: username);
-    await secureStorage.write(key: KEY_SAVED_PASSWORD, value: password);
+  /// 保存登录凭证
+  Future<void> _saveCredentials(String username, String password) async {
+    await _secureStorage.write(key: _keySavedUsername, value: username);
+    await _secureStorage.write(key: _keySavedPassword, value: password);
   }
 
-  Future<Map<String, String>?> getSavedCredentials() async {
-    final username = await secureStorage.read(key: KEY_SAVED_USERNAME);
-    final password = await secureStorage.read(key: KEY_SAVED_PASSWORD);
+  /// 获取保存的凭证
+  Future<Map<String, String>?> _getSavedCredentials() async {
+    final username = await _secureStorage.read(key: _keySavedUsername);
+    final password = await _secureStorage.read(key: _keySavedPassword);
 
     if (username != null && password != null) {
-      return {
-        'username': username,
-        'password': password,
-      };
+      return {'username': username, 'password': password};
     }
     return null;
   }
 
-  Future<void> clearSavedCredentials() async {
-    await secureStorage.delete(key: KEY_SAVED_USERNAME);
-    await secureStorage.delete(key: KEY_SAVED_PASSWORD);
+  /// 清除保存的凭证
+  Future<void> _clearSavedCredentials() async {
+    await _secureStorage.delete(key: _keySavedUsername);
+    await _secureStorage.delete(key: _keySavedPassword);
+  }
+
+  // --- 辅助方法 ---
+
+  /// 处理 Tab 切换，清空输入框
+  void _handleTabChange() {
+    if (tabController.indexIsChanging) {
+      principalController.clear();
+      credentialsController.clear();
+    }
+  }
+
+  /// 加载公钥
+  Future<void> _loadPublicKey() async {
+    await _userController.getPublicKey();
+  }
+
+  /// 处理凭证存储逻辑
+  Future<void> _handleCredentialsStorage() async {
+    if (rememberCredentials.value) {
+      await _saveCredentials(
+        principalController.text,
+        credentialsController.text,
+      );
+    } else {
+      await _clearSavedCredentials();
+    }
+  }
+
+  /// 跳转到主页
+  Future<void> _navigateToHome() async {
+    try {
+      await _userController.getUserInfo();
+      Get.offNamed(Routes.HOME);
+    } catch (e) {
+      _showError('获取用户信息失败，请重新登录');
+    }
+  }
+
+  /// 验证输入是否有效
+  bool _validateInput() {
+    if (principalController.text.isEmpty ||
+        credentialsController.text.isEmpty) {
+      final message =
+          currentAuthType == AuthType.password ? '请输入账号和密码' : '请输入手机号和验证码';
+      _showError(message);
+      return false;
+    }
+
+    if (currentAuthType == AuthType.verifyCode && !_isValidPhoneNumber()) {
+      _showError('请输入正确的手机号格式');
+      return false;
+    }
+
+    return true;
+  }
+
+  /// 验证手机号格式
+  bool _isValidPhoneNumber() =>
+      RegExp(_phoneRegExp).hasMatch(principalController.text);
+
+  /// 显示错误提示
+  void _showError(String message) {
+    Get.snackbar('提示', message, snackPosition: SnackPosition.TOP);
   }
 }

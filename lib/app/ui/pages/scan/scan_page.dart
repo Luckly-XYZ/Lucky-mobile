@@ -1,340 +1,309 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 用于震动反馈
-import 'package:flutter_im/app/routes/app_routes.dart';
-import 'package:flutter_im/constants/app_constant.dart';
-import 'package:flutter_im/utils/audio.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-
+import '../../../../constants/app_constant.dart';
+import '../../../../utils/audio.dart';
+import '../../../routes/app_routes.dart';
 import 'login_authorization_page.dart';
 
+/// 扫一扫页面，支持扫描二维码并处理 URL、登录授权和好友资料
+/// 特性：
+/// - 使用 MobileScanner 提供二维码扫描功能。
+/// - 支持闪光灯开关和扫描线动画。
+/// - 提供震动和音效反馈，处理不同类型二维码（URL、登录、好友资料）。
+/// - 自动管理相机生命周期（暂停/恢复）。
 class ScanPage extends StatefulWidget {
-  const ScanPage({Key? key}) : super(key: key);
+  const ScanPage({super.key});
 
   @override
-  _ScanPageState createState() => _ScanPageState();
+  State<ScanPage> createState() => _ScanPageState();
 }
 
 class _ScanPageState extends State<ScanPage>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  final MobileScannerController controller = MobileScannerController();
-  bool isTorchOn = false; // 闪光灯状态
+  // 常量定义
+  static const _scanAreaSize = 250.0; // 扫描区域尺寸
+  static const _cornerSize = 30.0; // 扫描框角尺寸
+  static const _cornerBorderWidth = 4.0; // 扫描框角边框宽度
+  static const _animationDuration = Duration(seconds: 2); // 扫描线动画时长
+  static const _audioPath = 'audio/beep.mp3'; // 扫码音效路径
+  static const _iconSize = 24.0; // 返回按钮图标尺寸
+  static const _torchIconSize = 40.0; // 闪光灯图标尺寸
+
+  final MobileScannerController _controller = MobileScannerController();
+  bool _isTorchOn = false; // 闪光灯状态
   late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     // 设置强制竖屏
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-
-    // 添加应用生命周期监听
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    // 添加生命周期监听
     WidgetsBinding.instance.addObserver(this);
-    // 启动相机
-    controller.start();
-
     // 初始化动画控制器
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration: _animationDuration,
     )..repeat();
+    // 启动相机
+    _controller.start();
   }
 
   @override
   void dispose() {
-    // 移除应用生命周期监听
+    // 移除生命周期监听
     WidgetsBinding.instance.removeObserver(this);
-    // 停止相机并释放资源
-    controller.dispose();
+    // 释放相机和动画资源
+    _controller.dispose();
     _animationController.dispose();
     super.dispose();
   }
 
-  // 监听应用生命周期变化
+  /// 监听应用生命周期变化
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!mounted) return;
-
     switch (state) {
       case AppLifecycleState.resumed:
-        // 应用从后台恢复时，启动相机
-        if (!controller.isStarting) {
-          controller.start();
-        }
+        // 应用恢复时启动相机
+        if (!_controller.isStarting) _controller.start();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
-        // 应用进入后台或暂停时，停止相机
-        if (controller.isStarting) {
-          controller.stop();
-        }
+        // 应用暂停时停止相机
+        if (_controller.isStarting) _controller.stop();
         break;
       default:
         break;
     }
   }
 
-  /// **条码检测回调**
-  ///
-  /// - 通过 `BarcodeCapture` 获取检测到的所有二维码
-  /// - 提取二维码的内容（`rawValue`）
-  /// - 获取二维码的类型、格式等信息
-  /// - 触发震动反馈 & 播放扫码提示音
-  /// - 解析二维码内容，执行相应的跳转逻辑
-  void onBarcodeDetected(BarcodeCapture capture) {
-    final List<Barcode> barcodes = capture.barcodes;
+  /// 处理二维码扫描结果
+  void _handleBarcode(BarcodeCapture capture) {
+    final barcode = capture.barcodes.firstOrNull;
+    if (barcode == null) return;
 
-    // **确保至少检测到一个二维码**
-    if (barcodes.isNotEmpty) {
-      final Barcode firstBarcode = barcodes.first;
+    final code = barcode.rawValue;
+    if (code == null) return;
 
-      // **获取二维码的内容（数据）**
-      final String? code = firstBarcode.rawValue;
+    debugPrint(
+        '✅ 扫码结果: $code, 格式: ${barcode.format.name}, 类型: ${barcode.type.name}');
 
-      // **获取二维码的类型（格式）**
-      final BarcodeFormat format =
-          firstBarcode.format; // e.g., QR_CODE, CODE_128, EAN_13
-      final String formatString = format.name; // 转换成字符串
-      debugPrint('📌 扫码格式: $formatString');
+    // 触发震动和音效反馈
+    HapticFeedback.mediumImpact();
+    AudioPlayerUtil().play(_audioPath, useMediaVolume: false);
 
-      // **获取二维码的元信息（可能为空）**
-      final BarcodeType type = firstBarcode.type; // 例如：URL、文本、WiFi、联系人等
-      debugPrint('📌 二维码类型: ${type.name}');
+    // 停止相机以防止重复扫描
+    _controller.stop();
 
-      // **检查是否成功解析二维码内容**
-      if (code != null) {
-        debugPrint('✅ 扫码结果: $code');
+    // 定义二维码处理逻辑
+    var handlers = {
+      AppConstants.LOGIN_QRCODE_PREFIX: _handleLoginQRCode,
+      AppConstants.FRIEND_PROFILE_PREFIX: _handleFriendProfileQRCode,
+    };
 
-        // **触发中等强度的震动反馈**
-        HapticFeedback.mediumImpact();
+    // 检查是否为 URL 或特定前缀
+    if (GetUtils.isURL(code)) {
+      _navigateTo(Routes.WEB_VIEW, arguments: {'url': code});
+      return;
+    }
 
-        // **播放扫码音效**
-        AudioPlayerUtil().play('audio/beep.mp3', useMediaVolume: false);
-
-        // **如果是URL，则跳转到 WebView**
-        if (GetUtils.isURL(code)) {
-          debugPrint('🌐 解析为 URL，跳转到 WebView: $code');
-
-          // 停止扫码
-          controller.stop();
-
-          // **跳转 WebView 并传递 URL 参数**
-          Get.toNamed(Routes.WEB_VIEW, arguments: {"url": code})?.then((_) {
-            // **WebView 返回时，重新启动扫码**
-            if (mounted) {
-              controller.start();
-            }
-          }).catchError((err) {
-            debugPrint('❌ WebView 页面跳转失败: $err');
-            Get.back();
-          });
-
-          return;
+    // 匹配前缀并执行对应处理
+    for (final entry in handlers.entries) {
+      if (code.startsWith(entry.key)) {
+        final trimmedCode = code.substring(entry.key.length);
+        if (trimmedCode.isNotEmpty) {
+          entry.value(trimmedCode);
         }
-
-        // **如果二维码内容以特定前缀开头，则跳转到授权页面**
-        if (code.startsWith(AppConstants.LOGIN_QRCODE_PREFIX)) {
-          debugPrint('🔐 解析为登录二维码，跳转到授权页面');
-
-          // **防止重复跳转**
-          if (ModalRoute.of(context)?.settings.name != '/authorization') {
-            String trimmedCode =
-                code.substring(AppConstants.LOGIN_QRCODE_PREFIX.length);
-            if (trimmedCode.isNotEmpty) {
-              // **停止扫码**
-              controller.stop();
-
-              // **跳转授权页面并传递数据**
-              Get.to(() => AuthorizationPage(code: trimmedCode))?.then((_) {
-                // **授权页面返回时，重新启动扫码**
-                if (mounted) {
-                  controller.start();
-                }
-              }).catchError((err) {
-                debugPrint('❌ 授权页面跳转失败: $err');
-                Get.back();
-              });
-            }
-          }
-        }
-
-        // **如果二维码内容以特定前缀开头，则跳转到好友资料页面**
-        if (code.startsWith(AppConstants.FRIEND_PROFILE_PREFIX)) {
-          debugPrint('👤 解析为好友资料二维码，跳转到好友资料页面');
-
-          String trimmedCode =
-              code.substring(AppConstants.FRIEND_PROFILE_PREFIX.length);
-
-          if (trimmedCode.isNotEmpty) {
-            // **停止扫码**
-            controller.stop();
-
-            // **跳转好友资料页面并传递数据**
-            Get.toNamed("${Routes.HOME}${Routes.FRIEND_PROFILE}",
-                arguments: {'userId': trimmedCode})?.then((_) {
-              // **好友资料页面返回时，重新启动扫码**
-              if (mounted) {
-                controller.start();
-              }
-            }).catchError((err) {
-              debugPrint('❌ 好友资料页面跳转失败: $err');
-              Get.back();
-            });
-          }
-        }
+        return;
       }
+    }
+
+    // 未识别的二维码，显示提示
+    Get.snackbar('提示', '无法识别的二维码内容');
+    _controller.start();
+  }
+
+  /// 处理登录二维码
+  void _handleLoginQRCode(String code) {
+    if (ModalRoute.of(context)?.settings.name != '/authorization') {
+      _navigateToWidget(AuthorizationPage(code: code));
+    }
+  }
+
+  /// 处理好友资料二维码
+  void _handleFriendProfileQRCode(String userId) {
+    _navigateTo('${Routes.HOME}${Routes.FRIEND_PROFILE}',
+        arguments: {'userId': userId});
+  }
+
+  /// 页面跳转并处理返回
+  Future<void> _navigateTo(String route,
+      {Map<String, dynamic>? arguments}) async {
+    try {
+      await Get.toNamed(route, arguments: arguments);
+      if (mounted) _controller.start();
+    } catch (err) {
+      debugPrint('❌ 页面跳转失败: $err');
+      Get.back();
+    }
+  }
+
+  /// 跳转到指定页面
+  Future<void> _navigateToWidget(Widget page) async {
+    try {
+      await Get.to(() => page);
+      if (mounted) _controller.start();
+    } catch (err) {
+      debugPrint('❌ 页面跳转失败: $err');
+      Get.back();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Stack(
         children: [
-          // 显示扫描界面
+          /// 扫描相机视图
           MobileScanner(
-            controller: controller,
-            onDetect: onBarcodeDetected,
+            controller: _controller,
+            onDetect: _handleBarcode,
           ),
-          // 左上角的返回按钮
+
+          /// 返回按钮
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             left: 16,
             child: IconButton(
-              icon: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 24,
-              ),
-              onPressed: () {
-                Get.back();
-              },
+              icon:
+                  const Icon(Icons.close, color: Colors.white, size: _iconSize),
+              onPressed: Get.back,
             ),
           ),
-          // 居中绘制扫描区域的边框
-          Center(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // 移除原来的Container，改用SizedBox来控制大小
-                const SizedBox(
-                  width: 250,
-                  height: 250,
-                ),
-                // 添加扫描线动画
-                AnimatedBuilder(
-                  animation: _animationController,
-                  builder: (context, child) {
-                    return Positioned(
-                      top: _animationController.value * 250,
-                      child: Container(
-                        width: 230,
-                        height: 2,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.green.withOpacity(0),
-                              Colors.green.withOpacity(0.5),
-                              Colors.green,
-                              Colors.green.withOpacity(0.5),
-                              Colors.green.withOpacity(0),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                // 左上角
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: Colors.green, width: 4),
-                        top: BorderSide(color: Colors.green, width: 4),
-                      ),
-                    ),
-                  ),
-                ),
-                // 右上角
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        right: BorderSide(color: Colors.green, width: 4),
-                        top: BorderSide(color: Colors.green, width: 4),
-                      ),
-                    ),
-                  ),
-                ),
-                // 左下角
-                Positioned(
-                  left: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: Colors.green, width: 4),
-                        bottom: BorderSide(color: Colors.green, width: 4),
-                      ),
-                    ),
-                  ),
-                ),
-                // 右下角
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        right: BorderSide(color: Colors.green, width: 4),
-                        bottom: BorderSide(color: Colors.green, width: 4),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 闪光灯图标位于扫描区域下方
+
+          /// 扫描区域边框和动画
+          Center(child: _buildScanOverlay()),
+
+          /// 闪光灯按钮
           Positioned(
             top: screenHeight / 2 + 140,
             left: 0,
             right: 0,
             child: Center(
               child: IconButton(
-                iconSize: 40,
+                iconSize: _torchIconSize,
                 icon: Icon(
-                  isTorchOn ? Icons.flash_on : Icons.flash_off,
-                  color:
-                      isTorchOn ? Colors.amber[400] : Colors.white, // 打开时显示金黄色
+                  _isTorchOn ? Icons.flash_on : Icons.flash_off,
+                  color: _isTorchOn ? Colors.amber[400] : Colors.white,
                 ),
                 onPressed: () {
                   setState(() {
-                    isTorchOn = !isTorchOn;
-                    controller.toggleTorch();
+                    _isTorchOn = !_isTorchOn;
+                    _controller.toggleTorch();
                   });
                 },
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 构建扫描区域边框和动画
+  Widget _buildScanOverlay() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        const SizedBox(width: _scanAreaSize, height: _scanAreaSize),
+
+        /// 扫描线动画
+        AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Positioned(
+              top: _animationController.value * _scanAreaSize,
+              child: Container(
+                width: _scanAreaSize - 20,
+                height: 2,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.green.withOpacity(0),
+                      Colors.green.withOpacity(0.5),
+                      Colors.green,
+                      Colors.green.withOpacity(0.5),
+                      Colors.green.withOpacity(0),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        /// 左上角
+        Positioned(
+          left: 0,
+          top: 0,
+          child: _buildCornerBorder(left: true, top: true),
+        ),
+
+        /// 右上角
+        Positioned(
+          right: 0,
+          top: 0,
+          child: _buildCornerBorder(right: true, top: true),
+        ),
+
+        /// 左下角
+        Positioned(
+          left: 0,
+          bottom: 0,
+          child: _buildCornerBorder(left: true, bottom: true),
+        ),
+
+        /// 右下角
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: _buildCornerBorder(right: true, bottom: true),
+        ),
+      ],
+    );
+  }
+
+  /// 构建扫描区域的角边框
+  Widget _buildCornerBorder(
+      {bool left = false,
+      bool right = false,
+      bool top = false,
+      bool bottom = false}) {
+    return Container(
+      width: _cornerSize,
+      height: _cornerSize,
+      decoration: BoxDecoration(
+        border: Border(
+          left: left
+              ? const BorderSide(color: Colors.green, width: _cornerBorderWidth)
+              : BorderSide.none,
+          right: right
+              ? const BorderSide(color: Colors.green, width: _cornerBorderWidth)
+              : BorderSide.none,
+          top: top
+              ? const BorderSide(color: Colors.green, width: _cornerBorderWidth)
+              : BorderSide.none,
+          bottom: bottom
+              ? const BorderSide(color: Colors.green, width: _cornerBorderWidth)
+              : BorderSide.none,
+        ),
       ),
     );
   }

@@ -1,452 +1,497 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart' as flutter_webrtc;
+import 'package:flutter_webrtc/flutter_webrtc.dart' as webrtc;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../api/api_service.dart';
 
-/// WebRTC 控制器（优化版）
-/// 主要改进：
-/// 1. 为本地预览创建单独的流，仅包含视频轨道，避免本地音频回路产生啸声。
-/// 2. 统一配置音频采集参数，确保开启回声消除、自动增益和噪声抑制。
+/// WebRTC 控制器，管理视频通话的推流、拉流及设备配置
+/// 优化特性：
+/// 1. 为本地预览创建仅含视频轨道的流，避免音频回路导致啸声。
+/// 2. 统一音频采集参数，启用回声消除、自动增益和噪声抑制。
+/// 3. 规范化错误处理和日志记录，提升代码可维护性。
 class WebRtcController extends GetxController {
-  /// 视频输出设备id
-  String? selectedVideoInputId;
-
-  MediaStream? _localStream;
-  VideoSize? videoSize;
-
-  /// 用户自身推流状态 0 未开始  1 成功 2 失败
-  final isConnectState = 0.obs;
-  late ApiService _apiService;
-
-  // 统一音频采集约束，确保启用回声消除、自动增益控制和噪声抑制
-  Map<String, dynamic> mediaConstraints = {
+  // 常量定义
+  static const _mediaConstraints = {
     'audio': {
-      "echoCancellation": true, // 回声消除
-      "autoGainControl": true, // 自动增益控制
-      "noiseSuppression": true, // 噪声抑制
+      'echoCancellation': true, // 回声消除
+      'autoGainControl': true, // 自动增益控制
+      'noiseSuppression': true, // 噪声抑制
     },
     'video': {
-      'facingMode': 'user', // 使用前置摄像头
-      'mirror': true,
+      'facingMode': 'user', // 默认使用前置摄像头
+      'mirror': true, // 镜像显示
     },
   };
+  static const _iceServers = [
+    {'urls': 'stun:stun.l.google.com:19302'}, // STUN 服务器
+  ];
+  static const _maxRetries = 3; // 拉流重试次数
+  static const _retryDelay = Duration(seconds: 1); // 重试间隔
 
-  List<RTCRtpSender> senders = <RTCRtpSender>[];
+  // 依赖注入
+  final _apiService = Get.find<ApiService>();
 
-  /// rtc 视频流数组
-  final rtcList = [].obs;
-
-  /// 设备信息
-  List devices = [];
+  // 响应式状态
+  final RxInt isConnectState = 0.obs; // 推流状态：0 未开始，1 成功，2 失败
+  final RxList<Map<String, dynamic>> rtcList =
+      <Map<String, dynamic>>[].obs; // 视频流列表
+  String? cameraIndex; // 当前选中的视频输入设备ID
+  MediaStream? _localStream; // 本地媒体流
+  VideoSize? videoSize; // 视频分辨率
+  List<RTCRtpSender> senders = []; // WebRTC 发送器列表
+  List<webrtc.MediaDeviceInfo> devices = []; // 设备信息列表
 
   @override
   void onInit() {
     super.onInit();
-    _apiService = Get.find<ApiService>();
+
+    /// 初始化 WebRTC 控制器
   }
 
-  /// 添加远程视频（逻辑保持不变）
+  // --- 视频流管理 ---
+
+  /// 添加远程视频流
+  /// @param url API 地址
+  /// @param webrtcUrl WebRTC 流地址
+  /// @param callback 成功或失败回调
+  /// @return 是否成功添加远程流
   Future<bool> addRemoteLive(String url, String webrtcUrl,
       {Function(bool)? callback}) async {
     try {
-      int maxRetries = 3;
-      int currentRetry = 0;
-      bool success = false;
-
-      while (currentRetry < maxRetries && !success) {
+      for (var retry = 0; retry < _maxRetries; retry++) {
         try {
-          int renderId = DateTime.now().millisecondsSinceEpoch;
-          RTCVideoRenderer remoteRenderer = RTCVideoRenderer();
+          final renderId = DateTime.now().millisecondsSinceEpoch;
+          final remoteRenderer = RTCVideoRenderer();
           await remoteRenderer.initialize();
 
-          var pc2 = await createPeerConnection({
-            'sdpSemantics': 'unified-plan',
-            'iceServers': [
-              {'urls': 'stun:stun.l.google.com:19302'},
-            ],
-            'bundlePolicy': 'max-bundle',
-            'rtcpMuxPolicy': 'require',
-          });
-
-          pc2.onTrack = (event) {
+          final pc = await _createPeerConnection();
+          pc.onTrack = (event) {
             if (event.track.kind == 'video') {
               remoteRenderer.srcObject = event.streams[0];
             }
           };
 
-          var offer = await pc2.createOffer({
+          final offer = await pc.createOffer({
             'mandatory': {
               'OfferToReceiveAudio': true,
-              'OfferToReceiveVideo': true,
+              'OfferToReceiveVideo': true
             },
           });
-          await pc2.setLocalDescription(offer);
+          await pc.setLocalDescription(offer);
 
-          pc2.onConnectionState = (state) {
-            onConnectionState(state, renderId);
-            if (state ==
-                RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
-              success = true;
-            }
-          };
+          pc.onConnectionState = (state) => _onConnectionState(state, renderId);
+          pc.onIceConnectionState =
+              (state) => _onIceConnectionState(state, renderId);
 
-          pc2.onIceConnectionState = (state) {
-            onIceConnectionState(state, renderId);
-          };
-
-          var answer = await _apiService.webRtcHandshake(
+          final answer = await _apiService.webRtcHandshake(
               url, webrtcUrl, offer.sdp ?? '');
-          if (answer == null) throw Exception('Failed to get remote answer');
-          await pc2.setRemoteDescription(answer);
+          if (answer == null) throw Exception('获取远程应答失败');
+          await pc.setRemoteDescription(answer);
 
-          Map webRtcData = {
-            "renderId": renderId,
-            "pc": pc2,
-            "renderer": remoteRenderer,
-            "self": false,
-          };
+          rtcList.add({
+            'renderId': renderId,
+            'pc': pc,
+            'renderer': remoteRenderer,
+            'self': false,
+          });
 
-          rtcList.value = [...rtcList, webRtcData];
-          success = true;
           callback?.call(true);
           return true;
         } catch (e) {
-          currentRetry++;
-          if (currentRetry >= maxRetries) {
-            Get.log('拉流重试失败，错误: $e');
+          if (retry == _maxRetries - 1) {
+            _logError('拉流重试失败: $e');
             callback?.call(false);
             return false;
           }
-          await Future.delayed(Duration(seconds: 1));
+          await Future.delayed(_retryDelay);
         }
       }
-      return success;
+      return false;
     } catch (e) {
-      Get.log('添加远程视频失败: $e');
+      _logError('添加远程视频失败: $e');
       callback?.call(false);
       return false;
     }
   }
 
-  /// 开启摄像头预览（优化版）
-  /// 1. 获取完整的音视频流用于推流；
-  /// 2. 为本地预览创建只包含视频轨道的新流，避免音频回传导致啸声问题。
+  /// 开启本地摄像头预览
+  /// 创建仅含视频轨道的流用于预览，避免音频回路啸声
   Future<void> openVideo() async {
-    // 建立 PeerConnection 用于本地推流
-    var locatPc = await createPeerConnection({
-      'sdpSemantics': 'unified-plan',
-    });
-    int renderId = DateTime.now().millisecondsSinceEpoch;
-    RTCVideoRenderer localRenderer = RTCVideoRenderer();
-    await localRenderer.initialize();
+    try {
+      final renderId = DateTime.now().millisecondsSinceEpoch;
+      final localRenderer = RTCVideoRenderer();
+      await localRenderer.initialize();
 
-    // 如果设置了视频尺寸，则加入到视频约束中
-    if (videoSize != null) {
-      mediaConstraints['video']['width'] = videoSize?.width;
-      mediaConstraints['video']['height'] = videoSize?.height;
+      final pc = await _createPeerConnection();
+
+      // 应用视频尺寸约束
+      final constraints = Map<String, dynamic>.from(_mediaConstraints);
+      if (videoSize != null) {
+        constraints['video']['width'] = videoSize!.width;
+        constraints['video']['height'] = videoSize!.height;
+      }
+
+      // 获取完整音视频流用于推流
+      _localStream =
+          await webrtc.navigator.mediaDevices.getUserMedia(constraints);
+
+      // 添加轨道到 PeerConnection
+      for (var track in _localStream!.getTracks()) {
+        senders.add(await pc.addTrack(track, _localStream!));
+      }
+
+      // 创建仅含视频轨道的流用于本地预览
+      final videoPreviewStream =
+          await webrtc.createLocalMediaStream('videoPreview');
+      for (var track in _localStream!.getVideoTracks()) {
+        videoPreviewStream.addTrack(track);
+      }
+      localRenderer.srcObject = videoPreviewStream;
+
+      rtcList.insert(0, {
+        'renderId': renderId,
+        'pc': pc,
+        'renderer': localRenderer,
+        'self': true,
+      });
+    } catch (e) {
+      _logError('开启本地摄像头失败: $e');
     }
-    // 获取包含音频和视频的本地流（用于推流）
-    _localStream = await flutter_webrtc.navigator.mediaDevices
-        .getUserMedia(mediaConstraints);
-
-    // 将所有轨道添加到 PeerConnection 中
-    _localStream?.getTracks().forEach((MediaStreamTrack track) async {
-      var rtpSender = await locatPc.addTrack(track, _localStream!);
-      senders.add(rtpSender);
-    });
-
-    // 创建一个新的媒体流，只添加视频轨道，作为本地预览流，防止回音和啸声问题
-    MediaStream videoPreviewStream =
-        await createLocalMediaStream('videoPreview');
-    for (var track in _localStream!.getVideoTracks()) {
-      videoPreviewStream.addTrack(track);
-    }
-    // 将只包含视频轨道的流赋值给本地渲染器
-    localRenderer.srcObject = videoPreviewStream;
-
-    Map webRtcData = {
-      "renderId": renderId,
-      "pc": locatPc,
-      "renderer": localRenderer,
-      "self": true,
-    };
-
-    rtcList.value = [
-      webRtcData,
-      ...rtcList,
-    ];
   }
 
-  /// 切换摄像头（代码保持不变）
-  Future<void> selectVideoInput(String? deviceId) async {
-    selectedVideoInputId = deviceId;
-
-    mediaConstraints = {
-      'audio': true,
-      'video': {
-        if (selectedVideoInputId != null && kIsWeb)
-          'deviceId': selectedVideoInputId,
-        if (selectedVideoInputId != null && !kIsWeb)
-          'optional': [
-            {'sourceId': selectedVideoInputId}
-          ],
-        'frameRate': 60,
-      },
-    };
-
-    setMediaConstraints(deviceId, mediaConstraints);
-  }
-
-  /// 设置视频大小（代码保持不变）
-  Future<void> setVideoSize(width, height) async {
-    videoSize = VideoSize(width, height);
-    mediaConstraints = {
-      'audio': true,
-      'video': {
-        if (selectedVideoInputId != null && kIsWeb)
-          'deviceId': selectedVideoInputId,
-        if (selectedVideoInputId != null && !kIsWeb)
-          'optional': [
-            {'sourceId': selectedVideoInputId}
-          ],
-        'width': videoSize?.width,
-        'height': videoSize?.height,
-        'frameRate': 60,
-      },
-    };
-
-    setMediaConstraints(selectedVideoInputId, mediaConstraints);
-  }
-
-  /// 切换推流视频配置（代码保持不变）
-  Future<void> setMediaConstraints(String? deviceId, mediaConstraints) async {
-    selectedVideoInputId = deviceId;
-
-    var localRenderer = rtcList[0]['renderer'];
-    localRenderer.srcObject = null;
-
-    _localStream?.getTracks().forEach((track) async {
-      await track.stop();
-    });
-
-    var newLocalStream = await flutter_webrtc.navigator.mediaDevices
-        .getUserMedia(mediaConstraints);
-    _localStream = newLocalStream;
-    localRenderer.srcObject = _localStream;
-
-    var newTrack = _localStream?.getVideoTracks().first;
-    var sender =
-        senders.firstWhereOrNull((sender) => sender.track?.kind == 'video');
-    var params = sender!.parameters;
-    params.degradationPreference = RTCDegradationPreference.MAINTAIN_RESOLUTION;
-    await sender.setParameters(params);
-    await sender.replaceTrack(newTrack);
-  }
-
-  /// 建立本地视频推流（代码保持不变）
+  /// 建立本地视频推流
+  /// @param url API 地址
+  /// @param webrtcUrl WebRTC 流地址
+  /// @param callback 成功或失败回调
+  /// @return 是否成功推流
   Future<bool> addLocalMedia(String url, String webrtcUrl,
       {Function(bool)? callback}) async {
     try {
-      var locatPc = rtcList[0]['pc'];
-      var renderId = rtcList[0]['renderId'];
+      if (rtcList.isEmpty) throw Exception('本地流未初始化');
+      final pc = rtcList[0]['pc'] as RTCPeerConnection;
+      final renderId = rtcList[0]['renderId'] as int;
 
-      locatPc.onConnectionState = (state) {
-        onConnectionState(state, renderId);
-      };
-      locatPc.onIceConnectionState = (state) {
-        onIceConnectionState(state, renderId);
-      };
-      locatPc.getStats().then(peerConnectionState);
+      pc.onConnectionState = (state) => _onConnectionState(state, renderId);
+      pc.onIceConnectionState =
+          (state) => _onIceConnectionState(state, renderId);
+      pc.getStats().then(_peerConnectionState);
 
-      var offer = await locatPc.createOffer();
-      await locatPc.setLocalDescription(offer);
-      var answer = await _apiService
+      final offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      final answer = await _apiService
           .webRtcHandshake(url, webrtcUrl, offer.sdp ?? '', type: 'publish');
+      if (answer == null) throw Exception('获取远程应答失败');
+      await pc.setRemoteDescription(answer);
 
-      if (answer == null) {
-        callback?.call(false);
-        return false;
-      }
-      await locatPc.setRemoteDescription(answer);
       callback?.call(true);
       return true;
     } catch (e) {
-      Get.log('开启本地 推流出错$e');
+      _logError('开启本地推流失败: $e');
       callback?.call(false);
       return false;
     }
   }
 
-  /// 关闭指定的推流（代码保持不变）
+  /// 关闭指定视频流
+  /// @param renderId 流标识
   Future<void> closeRenderId(int renderId) async {
-    var _inx = rtcList.indexWhere((item) => item['renderId'] == renderId);
-    if (_inx == -1) {
-      Get.log('直播不存在');
-      return;
+    try {
+      final index = rtcList.indexWhere((item) => item['renderId'] == renderId);
+      if (index == -1) {
+        _logError('视频流不存在: $renderId');
+        return;
+      }
+
+      final item = rtcList[index];
+      await item['pc']?.close();
+      await item['renderer']?.srcObject?.dispose();
+      await item['renderer']?.dispose();
+      rtcList.removeAt(index);
+    } catch (e) {
+      _logError('关闭视频流失败: $e');
     }
-    rtcList[_inx]['pc'].close();
-    rtcList[_inx]['renderer'].srcObject = null;
-    rtcList.removeAt(_inx);
   }
 
-  /// 关闭全部推流（代码保持不变）
+  /// 关闭所有视频流并释放资源
   Future<void> close() async {
-    _localStream?.getTracks().forEach((track) async {
-      await track.stop();
-    });
-    _localStream?.dispose();
-    _localStream = null;
+    try {
+      // 停止本地流轨道
+      _localStream?.getTracks().forEach((track) => track.stop());
+      _localStream?.dispose();
+      _localStream = null;
 
-    for (var i = 0; i < rtcList.length; i++) {
-      await rtcList[i]['renderer'].dispose();
-      await rtcList[i]['pc'].dispose();
-    }
+      // 释放所有 PeerConnection 和渲染器
+      for (var item in rtcList) {
+        try {
+          await item['pc']?.close();
+        } catch (e) {
+          _logError('关闭 PeerConnection 时出错: $e');
+        }
 
-    rtcList.clear();
-    rtcList.value = [];
+        try {
+          await item['renderer']?.srcObject?.dispose();
+        } catch (e) {
+          _logError('释放渲染器源对象时出错: $e');
+        }
 
-    isConnectState.value = 0;
-    selectedVideoInputId = null;
-  }
-
-  /// 获取设备列表信息（代码保持不变）
-  Future<void> loadDevices() async {
-    if (WebRTC.platformIsAndroid || WebRTC.platformIsIOS) {
-      var status = await Permission.bluetooth.request();
-      if (status.isPermanentlyDenied) {
-        Get.log('BLEpermdisabled');
-      }
-      status = await Permission.bluetoothConnect.request();
-      if (status.isPermanentlyDenied) {
-        Get.log('ConnectPermdisabled');
-      }
-    }
-    devices = await flutter_webrtc.navigator.mediaDevices.enumerateDevices();
-    selectedVideoInputId = getVideoDevice();
-    Get.log('selectedVideoInputId: $selectedVideoInputId');
-  }
-
-  /// webrtc 链接状态回调（代码保持不变）
-  dynamic onConnectionState(RTCPeerConnectionState state, int index) {
-    switch (state) {
-      case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
-        Get.log('$index 链接 成功');
-        break;
-      case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
-        Get.log('$index 链接 失败');
-        break;
-      default:
-        Get.log('$index 链接 还未建立成功');
-    }
-  }
-
-  /// webrtc ice 建立状态（代码保持不变）
-  dynamic onIceConnectionState(RTCIceConnectionState state, int index) {
-    switch (state) {
-      case RTCIceConnectionState.RTCIceConnectionStateFailed:
-        Get.log('$index ice对等 链接 失败');
-        break;
-      case RTCIceConnectionState.RTCIceConnectionStateConnected:
-        Get.log('$index ice对等 链接 成功 开始推流');
-        break;
-      case RTCIceConnectionState.RTCIceConnectionStateDisconnected:
-        Get.log('$index ice对等 链接断开 可以尝试重新连接');
-        break;
-      default:
-    }
-  }
-
-  /// 推流状态回调（代码保持不变）
-  dynamic peerConnectionState(state) {
-    Get.log('当前推流状态 $state');
-  }
-
-  /// 获取前置或后置摄像头（代码保持不变）
-  String getVideoDevice({bool front = true}) {
-    for (final device in devices) {
-      if (device.kind == 'videoinput') {
-        if (front && device.label.contains('front')) {
-          return device.deviceId;
-        } else if (!front && device.label.contains('back')) {
-          return device.deviceId;
+        try {
+          await item['renderer']?.dispose();
+        } catch (e) {
+          _logError('释放渲染器时出错: $e');
         }
       }
+
+      rtcList.clear();
+      isConnectState.value = 0;
+      cameraIndex = null;
+      senders.clear();
+
+      _logInfo('所有视频流和资源已成功关闭');
+    } catch (e) {
+      _logError('关闭所有视频流失败: $e');
     }
-    return "";
   }
 
-  /// 切换麦克风状态（代码保持不变）
+  // --- 设备管理 ---
+
+  /// 加载设备列表
+  Future<void> loadDevices() async {
+    try {
+      if (WebRTC.platformIsAndroid || WebRTC.platformIsIOS) {
+        for (var permission in [
+          Permission.bluetooth,
+          Permission.bluetoothConnect
+        ]) {
+          final status = await permission.request();
+          if (status.isPermanentlyDenied) {
+            _logError('${permission.toString()} 权限被永久拒绝');
+          }
+        }
+      }
+
+      devices = await webrtc.navigator.mediaDevices.enumerateDevices();
+      cameraIndex = getVideoDevice();
+      _logInfo('当前视频输入设备ID: $cameraIndex');
+    } catch (e) {
+      _logError('加载设备列表失败: $e');
+    }
+  }
+
+  /// 切换摄像头
+  /// @param deviceId 设备ID
+  Future<void> selectVideoInput(String? deviceId) async {
+    try {
+      cameraIndex = deviceId;
+      cameraIndex = deviceId;
+
+      final mediaConstraints = {
+        'audio': true,
+        'video': {
+          if (cameraIndex != null && kIsWeb) 'deviceId': cameraIndex,
+          if (cameraIndex != null && !kIsWeb)
+            'optional': [
+              {'sourceId': cameraIndex}
+            ],
+          'frameRate': 60,
+        }
+      };
+      await _updateLocalStream(mediaConstraints);
+    } catch (e) {
+      _logError('切换摄像头失败: $e');
+    }
+  }
+
+  /// 设置视频分辨率
+  /// @param width 宽度
+  /// @param height 高度
+  Future<void> setVideoSize(int width, int height) async {
+    try {
+      videoSize = VideoSize(width, height);
+      final constraints = _buildMediaConstraints(cameraIndex, frameRate: 60);
+      await _updateLocalStream(constraints);
+    } catch (e) {
+      _logError('设置视频分辨率失败: $e');
+    }
+  }
+
+  /// 切换麦克风状态
   Future<void> toggleAudio() async {
-    if (_localStream != null) {
+    try {
+      if (_localStream == null) return;
       final audioTracks = _localStream!.getAudioTracks();
       for (var track in audioTracks) {
         track.enabled = !track.enabled;
       }
-      if (mediaConstraints['audio'] is Map) {
-        mediaConstraints['audio']['enabled'] = audioTracks.first.enabled;
+      if (_mediaConstraints['audio'] is Map) {
+        _mediaConstraints['audio']?['enabled'] = audioTracks.first.enabled;
       } else {
-        mediaConstraints['audio'] = audioTracks.first.enabled;
+        _mediaConstraints['audio'] =
+            audioTracks.first.enabled as Map<String, Object>;
       }
+    } catch (e) {
+      _logError('切换麦克风状态失败: $e');
     }
   }
+
+  // --- 状态回调 ---
+
+  /// WebRTC 连接状态回调
+  void _onConnectionState(RTCPeerConnectionState state, int index) {
+    switch (state) {
+      case RTCPeerConnectionState.RTCPeerConnectionStateConnected:
+        _logInfo('$index 连接成功');
+        isConnectState.value = 1;
+        break;
+      case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
+        _logInfo('$index 连接失败');
+        isConnectState.value = 2;
+        break;
+      default:
+        _logInfo('$index 连接尚未建立');
+    }
+  }
+
+  /// WebRTC ICE 连接状态回调
+  void _onIceConnectionState(RTCIceConnectionState state, int index) {
+    switch (state) {
+      case RTCIceConnectionState.RTCIceConnectionStateConnected:
+        _logInfo('$index ICE 连接成功，开始推流');
+        break;
+      case RTCIceConnectionState.RTCIceConnectionStateFailed:
+        _logError('$index ICE 连接失败');
+        break;
+      case RTCIceConnectionState.RTCIceConnectionStateDisconnected:
+        _logError('$index ICE 连接断开，可尝试重新连接');
+        break;
+      default:
+    }
+  }
+
+  /// 推流状态回调
+  void _peerConnectionState(dynamic state) {
+    _logInfo('当前推流状态: $state');
+  }
+
+  // --- 辅助方法 ---
+
+  /// 创建 PeerConnection
+  Future<RTCPeerConnection> _createPeerConnection() async {
+    return createPeerConnection({
+      'sdpSemantics': 'unified-plan',
+      'iceServers': _iceServers,
+      'bundlePolicy': 'max-bundle',
+      'rtcpMuxPolicy': 'require',
+    });
+  }
+
+  /// 构建媒体约束
+  Map<String, dynamic> _buildMediaConstraints(String? deviceId,
+      {int? frameRate}) {
+    final constraints = Map<String, dynamic>.from(_mediaConstraints);
+    if (deviceId != null) {
+      constraints['video'][kIsWeb ? 'deviceId' : 'optional'] = kIsWeb
+          ? deviceId
+          : [
+              {'sourceId': deviceId}
+            ];
+    }
+    if (frameRate != null) {
+      constraints['video']['frameRate'] = frameRate;
+    }
+    if (videoSize != null) {
+      constraints['video']['width'] = videoSize!.width;
+      constraints['video']['height'] = videoSize!.height;
+    }
+    return constraints;
+  }
+
+  /// 更新本地流
+  Future<void> _updateLocalStream(Map<String, dynamic> constraints) async {
+    try {
+      if (rtcList.isEmpty) return;
+      final localRenderer = rtcList[0]['renderer'] as RTCVideoRenderer;
+
+      // 停止旧轨道
+      _localStream?.getTracks().forEach((track) => track.stop());
+      localRenderer.srcObject = null;
+
+      // 获取新流
+      _localStream =
+          await webrtc.navigator.mediaDevices.getUserMedia(constraints);
+      localRenderer.srcObject = _localStream;
+
+      // 更新视频轨道
+      final newTrack = _localStream?.getVideoTracks().first;
+      final sender = senders.firstWhereOrNull((s) => s.track?.kind == 'video');
+      if (sender != null && newTrack != null) {
+        final params = sender.parameters;
+        params.degradationPreference =
+            RTCDegradationPreference.MAINTAIN_RESOLUTION;
+        await sender.setParameters(params);
+        await sender.replaceTrack(newTrack);
+      }
+    } catch (e) {
+      _logError('更新本地流失败: $e');
+    }
+  }
+
+  /// 获取视频设备（优先前置摄像头）
+  String getVideoDevice({bool front = true}) {
+    for (final device in devices) {
+      if (device.kind == 'videoinput' &&
+          device.label.contains(front ? 'front' : 'back')) {
+        return device.deviceId;
+      }
+    }
+    return devices.isNotEmpty && devices.first.kind == 'videoinput'
+        ? devices.first.deviceId
+        : '';
+  }
+
+  /// 记录信息日志
+  void _logInfo(String message) => Get.log(message);
+
+  /// 记录错误日志
+  void _logError(String message) => Get.log('❌ $message');
 }
 
-/// webrtc 拉流地址解析（代码保持不变）
+/// WebRTC 流地址解析器
 class WebRTCUri {
-  late String api;
-  late String streamUrl;
+  late String api; // API 地址
+  late String streamUrl; // 流地址
 
-  static WebRTCUri parse(String url, {type = 'play'}) {
-    Uri uri = Uri.parse(url);
+  /// 解析 WebRTC 流地址
+  /// @param url 原始地址
+  /// @param type 流类型（play 或 publish）
+  static WebRTCUri parse(String url, {String type = 'play'}) {
+    final uri = Uri.parse(url);
+    var schema = uri.queryParameters['schema'] ?? 'https';
+    var port = uri.port > 0 ? uri.port : (schema == 'https' ? 443 : 1985);
+    var apiPath = uri.queryParameters['play'] ??
+        (type == 'publish' ? '/rtc/v1/publish/' : '/rtc/v1/play/');
 
-    String schema = 'https';
-    if (uri.queryParameters.containsKey('schema')) {
-      schema = uri.queryParameters['schema']!;
-    } else {
-      schema = 'https';
-    }
+    final apiParams = uri.queryParameters.entries
+        .where((e) => !['api', 'play', 'schema'].contains(e.key))
+        .map((e) => '${e.key}=${e.value}')
+        .toList();
 
-    var port = (uri.port > 0) ? uri.port : 443;
-    if (schema == 'https') {
-      port = (uri.port > 0) ? uri.port : 443;
-    } else if (schema == 'http') {
-      port = (uri.port > 0) ? uri.port : 1985;
-    }
+    final apiUrl =
+        '$schema://${uri.host}:$port$apiPath${apiParams.isNotEmpty ? '?' + apiParams.join('&') : ''}';
 
-    String api = '/rtc/v1/play/';
-    if (type == 'publish') {
-      api = '/rtc/v1/publish/';
-    }
-    if (uri.queryParameters.containsKey('play')) {
-      api = uri.queryParameters['play']!;
-    }
-
-    var apiParams = [];
-    for (var key in uri.queryParameters.keys) {
-      if (key != 'api' && key != 'play' && key != 'schema') {
-        apiParams.add('${key}=${uri.queryParameters[key]}');
-      }
-    }
-
-    var apiUrl = '${schema}://${uri.host}:${port}${api}';
-    if (apiParams.isNotEmpty) {
-      apiUrl += '?' + apiParams.join('&');
-    }
-
-    WebRTCUri r = WebRTCUri();
-    r.api = apiUrl;
-    r.streamUrl = url;
-    Get.log('Url ${url} parsed to api=${r.api}, stream=${r.streamUrl}');
-    return r;
+    final result = WebRTCUri()
+      ..api = apiUrl
+      ..streamUrl = url;
+    Get.log('解析 URL: $url -> api=$apiUrl, stream=${result.streamUrl}');
+    return result;
   }
 }
 
-/// 视频大小辅助类（代码保持不变）
+/// 视频分辨率辅助类
 class VideoSize {
-  VideoSize(this.width, this.height);
+  const VideoSize(this.width, this.height);
 
   factory VideoSize.fromString(String size) {
     final parts = size.split('x');
@@ -457,7 +502,5 @@ class VideoSize {
   final int height;
 
   @override
-  String toString() {
-    return '$width x $height';
-  }
+  String toString() => '$width x $height';
 }

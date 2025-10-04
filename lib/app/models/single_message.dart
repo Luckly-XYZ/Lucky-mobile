@@ -1,19 +1,41 @@
 import 'package:floor/floor.dart';
 
-@Entity(tableName: 'single_message') // Entity 注解，指定表名为 'Chats'
+/// single_message
+@Entity(tableName: 'single_message')
 class SingleMessage {
+  /// 消息 ID（主键）
   @primaryKey
   String messageId;
+
+  /// 发送者用户 ID
   String fromId;
+
+  /// 接收者用户 ID
   String toId;
+
+  /// 消息所有者 ID（一般与 fromId 相同）
   String ownerId;
+
+  /// 消息正文内容
   String messageBody;
+
+  /// 消息内容类型（如 text/image/video）
   int messageContentType;
+
+  /// 消息发送时间戳（毫秒）
   int messageTime;
+
+  /// 应用层消息类型（如 chat/notification）
   int messageType;
+
+  /// 阅读状态：0 未读，1 已读
   int readStatus;
+
+  /// 消息序列号，用于排序、去重
   int sequence;
-  String extra;
+
+  /// 扩展字段，存放额外 JSON 信息
+  String? extra;
 
   SingleMessage({
     required this.messageId,
@@ -23,10 +45,10 @@ class SingleMessage {
     required this.messageBody,
     required this.messageContentType,
     required this.messageTime,
-    required this.messageType,
+    required this.messageType, // IMessageType.SINGLE_MESSAGE.code
     required this.readStatus,
     required this.sequence,
-    required this.extra,
+    this.extra,
   });
 
   Map<String, dynamic> toJson() {
@@ -54,10 +76,11 @@ class SingleMessage {
       messageBody: json['messageBody'] as String,
       messageContentType: json['messageContentType'] as int,
       messageTime: json['messageTime'] as int,
-      messageType: json['messageType'] as int,
+      messageType: json['messageType'] as int? ?? 1,
+      // IMessageType.SINGLE_MESSAGE.code
       readStatus: json['readStatus'] as int,
       sequence: json['sequence'] as int,
-      extra: json['extra'] as String,
+      extra: json['extra'] as String?,
     );
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/message_receive.dart';
 
 class ImageBubble extends StatelessWidget {
-  final MessageReceiveDto message;
+  final IMessage message;
   final bool isMe;
 
   const ImageBubble({Key? key, required this.message, required this.isMe})

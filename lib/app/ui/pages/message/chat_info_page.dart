@@ -38,7 +38,8 @@ class ChatInfoPage extends StatelessWidget {
                 const SizedBox(width: 16),
                 Text(
                   name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -63,4 +64,4 @@ class ChatInfoPage extends StatelessWidget {
       ),
     );
   }
-} 
+}

@@ -21,7 +21,7 @@ Lucky是一款基于Flutter开发的即时通讯(IM)应用，支持一对一聊�
 
 ![](picture/微信图片_20251002182914_111_167.jpg)
 
-![](picture/微信图片_20251002182917_115_167.jpg)
+![](picture/微信图片_20251004101621_49486_139.jpg)
 
 ## 🛠 技术栈
 
@@ -86,6 +86,91 @@ lib/
 ├── constants/       # 常量定义
 └── utils/           # 工具类
 ```
+## 📁 nignx 服务反代
+````nginx
+#user  nobody;
+worker_processes  1;
+
+#pid        logs/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile      on;
+    keepalive_timeout  65;
+
+    server {
+        # HTTPS 监听端口（默认 443 也可以自定义，如 9191）
+        listen 9190 ssl;
+        server_name  localhost;  # 修改为你的域名或 IP
+
+        # 配置 SSL 证书和密钥文件路径
+        ssl_certificate "D:/Program Files/Nginx/cert/localhost.crt"; 
+        ssl_certificate_key "D:/Program Files/Nginx/cert/localhost.key"; # 配置密钥文件地址
+
+        # 反向代理所有请求到后端 HTTP 接口
+        location / {
+            # 此处 backend_http_host 与 backend_http_port 请替换成后端实际的 IP 和端口，例如 http://127.0.0.1:8080
+            proxy_pass http://localhost:9191;
+            
+            # 设置 HTTP 版本和必要的头部
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            # 通知后端使用 HTTPS 协议（虽然 Nginx 与后端之间使用 HTTP，但客户端为 HTTPS）
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "Upgrade";
+            proxy_read_timeout 3600s;
+        }
+    }
+
+
+	server {
+        # HTTPS 监听端口（默认 443 也可以自定义，如 9191）
+        listen 1980 ssl;
+        server_name  localhost;  # 修改为你的域名或 IP
+
+        # 配置 SSL 证书和密钥文件路径
+        ssl_certificate "D:/Program Files/Nginx/cert/localhost.crt"; 
+        ssl_certificate_key "D:/Program Files/Nginx/cert/localhost.key"; # 配置密钥文件地址
+
+        location / {
+           proxy_pass http://127.0.0.1:8080/;
+		   proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location ~ /.+/.*\.(flv|m3u8|ts|aac|mp3)$ {
+           proxy_pass http://127.0.0.1:8080$request_uri;
+		   proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+        }
+   
+        location /api/ {
+           proxy_pass http://127.0.0.1:1985/api/;
+		   proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+        }
+        
+        location /rtc/ {
+           proxy_pass http://127.0.0.1:1985/rtc/;
+		   proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+        }
+    } 
+}
+````
 
 ## 🤝 贡献指南
 

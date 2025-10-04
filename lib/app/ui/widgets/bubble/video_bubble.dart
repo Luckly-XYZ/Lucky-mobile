@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/message_receive.dart';
 
 class VideoBubble extends StatelessWidget {
-  final MessageReceiveDto message;
+  final IMessage message;
   final bool isMe;
 
   const VideoBubble({Key? key, required this.message, required this.isMe})

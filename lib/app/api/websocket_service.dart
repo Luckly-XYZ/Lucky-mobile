@@ -3,15 +3,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:protobuf/protobuf.dart';
 
 import '../../config/app_config.dart';
-import '../controller/user_controller.dart';
 import '../../proto/im_connect.pb.dart';
 import '../../proto/im_connect_json.dart';
-
+import '../controller/user_controller.dart';
 
 /// WebSocket状态
 enum SocketStatus {
@@ -128,8 +125,8 @@ class WebSocketService extends GetxService {
       try {
         if (data is Uint8List) {
           IMConnectMessage im_message = IMConnectMessage.fromBuffer(data);
-          latestMessage.value = jsonEncode(im_message.toJson()) ;
-          onMessage?.call( latestMessage.value);
+          latestMessage.value = jsonEncode(im_message.toJson());
+          onMessage?.call(latestMessage.value);
         } else if (data is List<int>) {
           final message = IMConnectMessage.fromBuffer(Uint8List.fromList(data));
           latestMessage.value = message.toString();
@@ -233,7 +230,8 @@ class WebSocketService extends GetxService {
   void sendMessage(message) {
     switch (_socketStatus.value) {
       case SocketStatus.socketStatusConnected:
-        Get.log('发送中：$message');
+
+        ///Get.log('发送中：$message');
         _webSocket.sink.add(message);
         break;
       case SocketStatus.socketStatusClosed:
@@ -283,8 +281,11 @@ class WebSocketService extends GetxService {
   void register(String token) {
     if (serializationType == SerializationType.protobuf) {
       // 使用 Protobuf 序列化
-      final registerMessage =
-          IMConnectMessage(code: 1000, token: token, message: 'registrar', deviceType: AppConfig.deviceType);
+      final registerMessage = IMConnectMessage(
+          code: 1000,
+          token: token,
+          message: 'registrar',
+          deviceType: AppConfig.deviceType);
       sendMessage(registerMessage.writeToBuffer());
     } else {
       // 使用 JSON 序列化

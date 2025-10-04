@@ -57,13 +57,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       // 标题
-      title: 'Flutter GetX App',
+      title: 'Lucky App',
       // 初始化绑定
       initialBinding: AppAllBinding(),
       // 初始路由
-      initialRoute: AppPages.INITIAL,
+      initialRoute: AppPages.initial,
       // 路由
-      getPages: AppPages.routes,
+      getPages: AppPages.rootRoutes,
       // 路由
       unknownRoute: AppPages.unknownRoute,
       // 国际化配置
@@ -90,6 +90,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+
+      // darkTheme: ThemeData.dark(), // 暗色主题
+      // themeMode: ThemeMode.system, // 跟随系统主题
 
       // 去除debug 标志
       debugShowCheckedModeBanner: false,

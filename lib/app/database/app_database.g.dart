@@ -102,13 +102,13 @@ class _$AppDatabase extends AppDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `chats` (`chatId` TEXT NOT NULL, `chatType` INTEGER NOT NULL, `ownerId` TEXT NOT NULL, `toId` TEXT NOT NULL, `isMute` INTEGER NOT NULL, `isTop` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `name` TEXT NOT NULL, `avatar` TEXT NOT NULL, `unread` INTEGER NOT NULL, `id` TEXT NOT NULL, `message` TEXT NOT NULL, `messageTime` INTEGER NOT NULL, PRIMARY KEY (`chatId`))');
+            'CREATE TABLE IF NOT EXISTS `chats` (`chatId` TEXT NOT NULL, `id` TEXT NOT NULL, `chatType` INTEGER NOT NULL, `ownerId` TEXT NOT NULL, `toId` TEXT NOT NULL, `isMute` INTEGER NOT NULL, `isTop` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `name` TEXT NOT NULL, `avatar` TEXT NOT NULL, `unread` INTEGER NOT NULL, `message` TEXT, `messageTime` INTEGER NOT NULL, PRIMARY KEY (`chatId`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `friend` (`userId` TEXT, `friendId` TEXT, `name` TEXT, `alias` TEXT, `avatar` TEXT, `gender` INTEGER, `location` TEXT, `black` INTEGER, `flag` INTEGER, `birthDay` TEXT, `selfSignature` TEXT, `sequence` INTEGER, PRIMARY KEY (`userId`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `group_message` (`messageId` TEXT NOT NULL, `fromId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `groupId` TEXT NOT NULL, `messageBody` TEXT NOT NULL, `messageContentType` INTEGER NOT NULL, `messageTime` INTEGER NOT NULL, `messageType` INTEGER NOT NULL, `readStatus` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `extra` TEXT NOT NULL, PRIMARY KEY (`messageId`))');
+            'CREATE TABLE IF NOT EXISTS `group_message` (`messageId` TEXT NOT NULL, `fromId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `groupId` TEXT NOT NULL, `messageBody` TEXT NOT NULL, `messageContentType` INTEGER NOT NULL, `messageTime` INTEGER NOT NULL, `messageType` INTEGER NOT NULL, `readStatus` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `extra` TEXT, PRIMARY KEY (`messageId`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `single_message` (`messageId` TEXT NOT NULL, `fromId` TEXT NOT NULL, `toId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `messageBody` TEXT NOT NULL, `messageContentType` INTEGER NOT NULL, `messageTime` INTEGER NOT NULL, `messageType` INTEGER NOT NULL, `readStatus` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `extra` TEXT NOT NULL, PRIMARY KEY (`messageId`))');
+            'CREATE TABLE IF NOT EXISTS `single_message` (`messageId` TEXT NOT NULL, `fromId` TEXT NOT NULL, `toId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `messageBody` TEXT NOT NULL, `messageContentType` INTEGER NOT NULL, `messageTime` INTEGER NOT NULL, `messageType` INTEGER NOT NULL, `readStatus` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `extra` TEXT, PRIMARY KEY (`messageId`))');
         await database.execute(
             'CREATE INDEX `index_chats_chatId_name` ON `chats` (`chatId`, `name`)');
         await database.execute(
@@ -153,6 +153,7 @@ class _$ChatsDao extends ChatsDao {
             'chats',
             (Chats item) => <String, Object?>{
                   'chatId': item.chatId,
+                  'id': item.id,
                   'chatType': item.chatType,
                   'ownerId': item.ownerId,
                   'toId': item.toId,
@@ -162,7 +163,6 @@ class _$ChatsDao extends ChatsDao {
                   'name': item.name,
                   'avatar': item.avatar,
                   'unread': item.unread,
-                  'id': item.id,
                   'message': item.message,
                   'messageTime': item.messageTime
                 }),
@@ -172,6 +172,7 @@ class _$ChatsDao extends ChatsDao {
             ['chatId'],
             (Chats item) => <String, Object?>{
                   'chatId': item.chatId,
+                  'id': item.id,
                   'chatType': item.chatType,
                   'ownerId': item.ownerId,
                   'toId': item.toId,
@@ -181,7 +182,6 @@ class _$ChatsDao extends ChatsDao {
                   'name': item.name,
                   'avatar': item.avatar,
                   'unread': item.unread,
-                  'id': item.id,
                   'message': item.message,
                   'messageTime': item.messageTime
                 });
@@ -200,19 +200,19 @@ class _$ChatsDao extends ChatsDao {
   Future<List<Chats>?> getAllChats(String ownerId) async {
     return _queryAdapter.queryList('SELECT * FROM Chats WHERE ownerId = ?1',
         mapper: (Map<String, Object?> row) => Chats(
-            row['chatId'] as String,
-            row['chatType'] as int,
-            row['ownerId'] as String,
-            row['toId'] as String,
-            row['isMute'] as int,
-            row['isTop'] as int,
-            row['sequence'] as int,
-            row['name'] as String,
-            row['avatar'] as String,
-            row['unread'] as int,
-            row['id'] as String,
-            row['message'] as String,
-            row['messageTime'] as int),
+            id: row['id'] as String,
+            chatId: row['chatId'] as String,
+            chatType: row['chatType'] as int,
+            ownerId: row['ownerId'] as String,
+            toId: row['toId'] as String,
+            isMute: row['isMute'] as int,
+            isTop: row['isTop'] as int,
+            sequence: row['sequence'] as int,
+            name: row['name'] as String,
+            avatar: row['avatar'] as String,
+            unread: row['unread'] as int,
+            message: row['message'] as String?,
+            messageTime: row['messageTime'] as int),
         arguments: [ownerId]);
   }
 
@@ -220,19 +220,19 @@ class _$ChatsDao extends ChatsDao {
   Future<Chats?> getChatById(int id) async {
     return _queryAdapter.query('SELECT * FROM Chats WHERE id = ?1',
         mapper: (Map<String, Object?> row) => Chats(
-            row['chatId'] as String,
-            row['chatType'] as int,
-            row['ownerId'] as String,
-            row['toId'] as String,
-            row['isMute'] as int,
-            row['isTop'] as int,
-            row['sequence'] as int,
-            row['name'] as String,
-            row['avatar'] as String,
-            row['unread'] as int,
-            row['id'] as String,
-            row['message'] as String,
-            row['messageTime'] as int),
+            id: row['id'] as String,
+            chatId: row['chatId'] as String,
+            chatType: row['chatType'] as int,
+            ownerId: row['ownerId'] as String,
+            toId: row['toId'] as String,
+            isMute: row['isMute'] as int,
+            isTop: row['isTop'] as int,
+            sequence: row['sequence'] as int,
+            name: row['name'] as String,
+            avatar: row['avatar'] as String,
+            unread: row['unread'] as int,
+            message: row['message'] as String?,
+            messageTime: row['messageTime'] as int),
         arguments: [id]);
   }
 
@@ -243,12 +243,12 @@ class _$ChatsDao extends ChatsDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM Chats WHERE (ownerId = ?1 and toId = ?2) or (ownerId = ?2 and toId = ?1)',
-        mapper: (Map<String, Object?> row) => Chats(row['chatId'] as String, row['chatType'] as int, row['ownerId'] as String, row['toId'] as String, row['isMute'] as int, row['isTop'] as int, row['sequence'] as int, row['name'] as String, row['avatar'] as String, row['unread'] as int, row['id'] as String, row['message'] as String, row['messageTime'] as int),
+        mapper: (Map<String, Object?> row) => Chats(id: row['id'] as String, chatId: row['chatId'] as String, chatType: row['chatType'] as int, ownerId: row['ownerId'] as String, toId: row['toId'] as String, isMute: row['isMute'] as int, isTop: row['isTop'] as int, sequence: row['sequence'] as int, name: row['name'] as String, avatar: row['avatar'] as String, unread: row['unread'] as int, message: row['message'] as String?, messageTime: row['messageTime'] as int),
         arguments: [ownerId, toId]);
   }
 
   @override
-  Future<void> deleteChat(int id) async {
+  Future<void> deleteChat(String id) async {
     await _queryAdapter
         .queryNoReturn('DELETE FROM chats WHERE id = ?1', arguments: [id]);
   }
@@ -257,7 +257,7 @@ class _$ChatsDao extends ChatsDao {
   Future<Chats?> getLastChat(String ownerId) async {
     return _queryAdapter.query(
         'SELECT * FROM Chats WHERE ownerId =?1 ORDER BY messageTime DESC LIMIT 1',
-        mapper: (Map<String, Object?> row) => Chats(row['chatId'] as String, row['chatType'] as int, row['ownerId'] as String, row['toId'] as String, row['isMute'] as int, row['isTop'] as int, row['sequence'] as int, row['name'] as String, row['avatar'] as String, row['unread'] as int, row['id'] as String, row['message'] as String, row['messageTime'] as int),
+        mapper: (Map<String, Object?> row) => Chats(id: row['id'] as String, chatId: row['chatId'] as String, chatType: row['chatType'] as int, ownerId: row['ownerId'] as String, toId: row['toId'] as String, isMute: row['isMute'] as int, isTop: row['isTop'] as int, sequence: row['sequence'] as int, name: row['name'] as String, avatar: row['avatar'] as String, unread: row['unread'] as int, message: row['message'] as String?, messageTime: row['messageTime'] as int),
         arguments: [ownerId]);
   }
 
@@ -396,7 +396,7 @@ class _$SingleMessageDao extends SingleMessageDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM single_message WHERE ( (fromId = ?1 AND toId = ?2 ) OR ( fromId = ?2 AND toId = ?1 ))',
-        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String),
+        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String?),
         arguments: [fromId, toId]);
   }
 
@@ -409,7 +409,7 @@ class _$SingleMessageDao extends SingleMessageDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM single_message      WHERE ((fromId = ?1 AND toId = ?2) OR (fromId = ?2 AND toId = ?1))     ORDER BY messageTime DESC      LIMIT ?3 OFFSET ?4',
-        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String),
+        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String?),
         arguments: [fromId, toId, limit, offset]);
   }
 
@@ -417,7 +417,7 @@ class _$SingleMessageDao extends SingleMessageDao {
   Future<SingleMessage?> getLastMessage(String ownerId) async {
     return _queryAdapter.query(
         'SELECT * FROM single_message      WHERE ownerId = ?1     ORDER BY messageTime DESC      LIMIT 1',
-        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String),
+        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String?),
         arguments: [ownerId]);
   }
 
@@ -428,7 +428,7 @@ class _$SingleMessageDao extends SingleMessageDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM single_message      WHERE messageBody LIKE \'%\' || ?1 || \'%\'     AND ((fromId = ?2) OR (toId = ?2))     ORDER BY messageTime DESC',
-        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String),
+        mapper: (Map<String, Object?> row) => SingleMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, toId: row['toId'] as String, ownerId: row['ownerId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String?),
         arguments: [keyword, userId]);
   }
 
@@ -484,7 +484,7 @@ class _$GroupMessageDao extends GroupMessageDao {
             messageType: row['messageType'] as int,
             readStatus: row['readStatus'] as int,
             sequence: row['sequence'] as int,
-            extra: row['extra'] as String),
+            extra: row['extra'] as String?),
         arguments: [ownerId]);
   }
 
@@ -496,7 +496,7 @@ class _$GroupMessageDao extends GroupMessageDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM group_message      WHERE ownerId = ?1     ORDER BY messageTime DESC      LIMIT ?2 OFFSET ?3',
-        mapper: (Map<String, Object?> row) => GroupMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, ownerId: row['ownerId'] as String, groupId: row['groupId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String),
+        mapper: (Map<String, Object?> row) => GroupMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, ownerId: row['ownerId'] as String, groupId: row['groupId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String?),
         arguments: [ownerId, limit, offset]);
   }
 
@@ -504,7 +504,7 @@ class _$GroupMessageDao extends GroupMessageDao {
   Future<GroupMessage?> getLastMessage(String ownerId) async {
     return _queryAdapter.query(
         'SELECT * FROM group_message      WHERE ownerId = ?1     ORDER BY messageTime DESC      LIMIT 1',
-        mapper: (Map<String, Object?> row) => GroupMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, ownerId: row['ownerId'] as String, groupId: row['groupId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String),
+        mapper: (Map<String, Object?> row) => GroupMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, ownerId: row['ownerId'] as String, groupId: row['groupId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String?),
         arguments: [ownerId]);
   }
 
@@ -515,7 +515,7 @@ class _$GroupMessageDao extends GroupMessageDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM group_message      WHERE messageBody LIKE \'%\' || ?1 || \'%\'     AND ownerId = ?2     ORDER BY messageTime DESC',
-        mapper: (Map<String, Object?> row) => GroupMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, ownerId: row['ownerId'] as String, groupId: row['groupId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String),
+        mapper: (Map<String, Object?> row) => GroupMessage(messageId: row['messageId'] as String, fromId: row['fromId'] as String, ownerId: row['ownerId'] as String, groupId: row['groupId'] as String, messageBody: row['messageBody'] as String, messageContentType: row['messageContentType'] as int, messageTime: row['messageTime'] as int, messageType: row['messageType'] as int, readStatus: row['readStatus'] as int, sequence: row['sequence'] as int, extra: row['extra'] as String?),
         arguments: [keyword, ownerId]);
   }
 

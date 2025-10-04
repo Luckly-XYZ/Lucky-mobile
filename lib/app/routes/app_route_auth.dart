@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_im/app/controller/user_controller.dart';
 import 'package:get/get.dart';
 
+import './app_routes.dart';
+
 /// 路由鉴权中间件
 class RouteAuthMiddleware extends GetMiddleware {
   @override
@@ -16,6 +18,6 @@ class RouteAuthMiddleware extends GetMiddleware {
     }
 
     Get.log('❌  token is empty,goto login: $token');
-    return const RouteSettings(name: "/login"); // 同时传参
+    return RouteSettings(name: Routes.LOGIN); // 同时传参
   }
 }

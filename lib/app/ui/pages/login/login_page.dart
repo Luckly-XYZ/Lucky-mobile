@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../controller/login_controller.dart';
@@ -10,7 +11,7 @@ class LoginPage extends GetView<LoginController> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: Colors.white,
+        // color: Colors.white,
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.fromLTRB(
@@ -136,7 +137,8 @@ class LoginPage extends GetView<LoginController> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: Color(0xFF409EFF), width: 1.5),
+                borderSide:
+                    const BorderSide(color: Color(0xFF409EFF), width: 1.5),
               ),
               prefixIcon: Icon(
                 isPasswordMode ? Icons.person_outline : Icons.phone_outlined,
@@ -151,6 +153,12 @@ class LoginPage extends GetView<LoginController> {
             keyboardType:
                 isPasswordMode ? TextInputType.text : TextInputType.phone,
             textInputAction: TextInputAction.next,
+            inputFormatters: isPasswordMode
+                ? [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                    FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                  ]
+                : null,
           ),
           const SizedBox(height: 16),
           TextField(
@@ -168,7 +176,8 @@ class LoginPage extends GetView<LoginController> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide: const BorderSide(color: Color(0xFF409EFF), width: 1.5),
+                borderSide:
+                    const BorderSide(color: Color(0xFF409EFF), width: 1.5),
               ),
               prefixIcon: Icon(
                 isPasswordMode ? Icons.lock_outline : Icons.security_outlined,
@@ -224,7 +233,8 @@ class LoginPage extends GetView<LoginController> {
                       },
                       activeColor: const Color(0xFF409EFF),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                      visualDensity:
+                          const VisualDensity(horizontal: -4, vertical: -4),
                     )),
                 GestureDetector(
                   onTap: () {
@@ -234,7 +244,7 @@ class LoginPage extends GetView<LoginController> {
                   child: const Text(
                     '记住密码',
                     style: TextStyle(
-                      color: Color(0xFF666666), 
+                      color: Color(0xFF666666),
                       fontSize: 14,
                     ),
                   ),

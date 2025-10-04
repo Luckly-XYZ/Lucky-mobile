@@ -3,45 +3,69 @@ import 'package:floor/floor.dart';
 import 'base_object.dart';
 import 'message_receive.dart';
 
+/// 会话表
 @Entity(tableName: 'chats', indices: [
   Index(value: ['chatId', 'name'])
-]) // Entity 注解，指定表名为 'Chats'  Index 索引
+])
 class Chats extends BaseObject {
+  /// 聊天 ID
   @primaryKey
   String chatId;
 
-  //@ColumnInfo(name: 'custom_name') 自定义列名
-  //@ignore // Ignore 注解，指定字段将被忽略
-  int chatType; // 消息类型
-  String ownerId; // 归属人
-  String toId; // 接收人
-  int isMute; // 免打扰
-  int isTop; // 置顶
-  int sequence; // 新增字段
-  String name; // 名称
-  String avatar; // 头像
-  int unread = 0; // 消息数
-  String id; // id
-  String message; // 消息
-  int messageTime; // 消息时间
+  String id;
 
-  Chats(
-      this.chatId,
-      this.chatType,
-      this.ownerId,
-      this.toId,
-      this.isMute,
-      this.isTop,
-      this.sequence,
-      this.name,
-      this.avatar,
-      this.unread,
-      this.id,
-      this.message,
-      this.messageTime); // 消息时间
+  /// 聊天类型
+  int chatType;
+
+  /// 群/会话拥有者
+  String ownerId;
+
+  /// 会话目标 ID
+  String toId;
+
+  /// 是否静音（0 否，1 是）
+  int isMute;
+
+  /// 是否置顶（0 否，1 是）
+  int isTop;
+
+  /// 消息序列号，用于去重/排序
+  int sequence;
+
+  /// 会话名称（如群名称或对话人昵称）
+  String name;
+
+  /// 会话头像 URL
+  String avatar;
+
+  /// 未读消息数
+  int unread;
+
+  /// 最后一条消息内容
+  String? message;
+
+  /// 最后一条消息时间戳（毫秒）
+  int messageTime;
+
+  Chats({
+    required this.id,
+    required this.chatId,
+    required this.chatType,
+    required this.ownerId,
+    required this.toId,
+    required this.isMute,
+    required this.isTop,
+    required this.sequence,
+    required this.name,
+    required this.avatar,
+    required this.unread,
+    this.message,
+    required this.messageTime,
+  });
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'chatId': chatId,
       'chatType': chatType,
       'ownerId': ownerId,
@@ -52,7 +76,6 @@ class Chats extends BaseObject {
       'name': name,
       'avatar': avatar,
       'unread': unread,
-      'id': id,
       'message': message,
       'messageTime': messageTime,
     };
@@ -60,19 +83,19 @@ class Chats extends BaseObject {
 
   factory Chats.fromJson(Map<String, dynamic> json) {
     return Chats(
-      json['chatId']?.toString() ?? '',
-      _parseIntSafely(json['chatType']),
-      json['ownerId']?.toString() ?? '',
-      json['toId']?.toString() ?? '',
-      _parseIntSafely(json['isMute']),
-      _parseIntSafely(json['isTop']),
-      _parseIntSafely(json['sequence']),
-      json['name']?.toString() ?? '',
-      json['avatar']?.toString() ?? '',
-      _parseIntSafely(json['unread']),
-      json['id']?.toString() ?? '',
-      json['message']?.toString() ?? '',
-      _parseIntSafely(json['messageTime']),
+      id: json['id']?.toString() ?? '',
+      chatId: json['chatId']?.toString() ?? '',
+      chatType: _parseIntSafely(json['chatType']),
+      ownerId: json['ownerId']?.toString() ?? '',
+      toId: json['toId']?.toString() ?? '',
+      isMute: _parseIntSafely(json['isMute']),
+      isTop: _parseIntSafely(json['isTop']),
+      sequence: json['sequence'] != null ? json['sequence'] as int : 0,
+      name: json['name']?.toString() ?? '',
+      avatar: json['avatar'].toString(),
+      unread: _parseIntSafely(json['unread']),
+      message: json['message']?.toString(),
+      messageTime: json['messageTime'] != null ? json['messageTime'] as int : 0,
     );
   }
 
@@ -86,10 +109,10 @@ class Chats extends BaseObject {
     return 0;
   }
 
-  static String toChatMessage(MessageReceiveDto dto) {
+  static String toChatMessage(IMessage dto) {
     String message = '';
     if (dto.messageBody is TextMessageBody) {
-      message = (dto.messageBody as TextMessageBody).message ?? '';
+      message = (dto.messageBody as TextMessageBody).text ?? '';
     } else if (dto.messageBody is ImageMessageBody) {
       message = '[图片]';
     } else if (dto.messageBody is VideoMessageBody) {

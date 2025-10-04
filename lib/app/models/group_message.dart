@@ -1,19 +1,41 @@
 import 'package:floor/floor.dart';
 
-@Entity(tableName: 'group_message') // Entity 注解，指定表名为 'Chats'
+/// 群聊消息表
+@Entity(tableName: 'group_message')
 class GroupMessage {
+  /// 消息 ID（主键）
   @primaryKey
   String messageId;
+
+  /// 发送者用户 ID
   String fromId;
+
+  /// 原始消息所属者 ID（比如群主/机器人）
   String ownerId;
+
+  /// 群组 ID
   String groupId;
+
+  /// 消息内容体（JSON 或纯文本）
   String messageBody;
+
+  /// 内容类型（例如 "text"、"image"）
   int messageContentType;
+
+  /// 消息发送时间戳（毫秒）
   int messageTime;
+
+  /// 消息类型（业务侧分类，如 "chat"、"notification"）
   int messageType;
+
+  /// 阅读状态（0 未读，1 已读）
   int readStatus;
+
+  /// 序列号，用于消息排序或去重
   int sequence;
-  String extra;
+
+  /// 扩展字段，可存放附加 JSON 信息
+  String? extra;
 
   GroupMessage({
     required this.messageId,
@@ -23,10 +45,10 @@ class GroupMessage {
     required this.messageBody,
     required this.messageContentType,
     required this.messageTime,
-    required this.messageType,
+    required this.messageType, // IMessageType.GROUP_MESSAGE.code
     required this.readStatus,
     required this.sequence,
-    required this.extra,
+    this.extra,
   });
 
   Map<String, dynamic> toJson() {
@@ -55,9 +77,10 @@ class GroupMessage {
       messageContentType: json['messageContentType'] as int,
       messageTime: json['messageTime'] as int,
       messageType: json['messageType'] as int,
+      // IMessageType.GROUP_MESSAGE.code
       readStatus: json['readStatus'] as int,
       sequence: json['sequence'] as int,
-      extra: json['extra'] as String,
+      extra: json['extra'] as String?,
     );
   }
 }

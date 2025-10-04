@@ -1,101 +1,162 @@
 import 'package:flutter/animation.dart';
-import 'package:flutter_im/app/ui/pages/contacts/add_friend_page.dart';
-import 'package:flutter_im/app/ui/pages/home/home_page.dart';
-import 'package:flutter_im/app/ui/pages/login/login_page.dart';
-import 'package:flutter_im/app/ui/pages/message/chat_info_page.dart';
-import 'package:flutter_im/app/ui/pages/message/message_page.dart';
-import 'package:flutter_im/app/ui/pages/my/my_qr_code_page.dart';
-import 'package:flutter_im/app/ui/pages/scan/scan_page.dart';
-import 'package:flutter_im/app/ui/pages/search/search_page.dart';
-import 'package:flutter_im/app/ui/pages/unknow/unknown_page.dart';
-import 'package:flutter_im/app/ui/pages/video/video_call_page.dart';
-import 'package:flutter_im/app/ui/pages/webview/webview_page.dart';
 import 'package:get/get.dart';
 
+import '../ui/pages/contacts/add_friend_page.dart';
 import '../ui/pages/contacts/friend_requests_page.dart';
 import '../ui/pages/friend/friend_profile_page.dart';
+import '../ui/pages/home/home_page.dart';
+import '../ui/pages/login/login_page.dart';
+import '../ui/pages/message/chat_info_page.dart';
+import '../ui/pages/message/message_page.dart';
+import '../ui/pages/my/my_qr_code_page.dart';
+import '../ui/pages/scan/scan_page.dart';
+import '../ui/pages/search/search_page.dart';
+import '../ui/pages/unknow/unknown_page.dart';
+import '../ui/pages/video/video_call_page.dart';
+import '../ui/pages/webview/webview_page.dart';
 import 'app_route_auth.dart';
 import 'app_routes.dart';
 
-/// 页面路由
+/// 应用路由配置，定义所有页面路由及其子路由
+/// 特性：
+/// - 配置根路由（如登录、首页、WebView）和首页子路由（如消息、聊天信息）。
+/// - 支持登录验证中间件，保护需要认证的页面。
+/// - 提供未知路由处理，显示 404 页面。
+/// - 统一页面过渡动画（300ms，easeInOut 曲线），增强用户体验。
 class AppPages {
-  // 默认路由
-  static const INITIAL = Routes.LOGIN;
+  // 常量定义
+  static const initial = Routes.LOGIN; // 默认路由：登录页面
+  static const _defaultTransitionDuration =
+      Duration(milliseconds: 300); // 默认过渡动画时长
+  static const _defaultCurve = Curves.easeInOut; // 默认过渡动画曲线
 
-  static final routes = [
+  /// 根路由列表
+  static final rootRoutes = <GetPage>[
+    /// 登录页面：用户登录界面
     GetPage(
-      name: Routes.LOGIN, // 登录
+      name: Routes.LOGIN,
       page: () => const LoginPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
     ),
+
+    /// WebView 页面：展示外部网页内容
     GetPage(
-      name: Routes.WEB_VIEW, // webview
+      name: Routes.WEB_VIEW,
       page: () => const WebViewPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
     ),
+
+    /// 首页：应用主界面，包含消息、通讯录等功能入口
     GetPage(
-      name: Routes.HOME, // 首页
+      name: Routes.HOME,
       page: () => const HomePage(),
       middlewares: [
-        RouteAuthMiddleware(), // 需要登录,如果未登录,则跳转到登录页面
+        RouteAuthMiddleware(), // 登录验证中间件，未登录时跳转到登录页面
       ],
-      children: getHomeChildPages(),
+      children: homeChildRoutes,
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
     ),
   ];
 
-  // 未知路由
-  static final unknownRoute = GetPage(
-    name: Routes.UNKNOWN,
-    page: () => const UnknownView(),
-  );
-}
-
-/// 首页子页面
-List<GetPage> getHomeChildPages() {
-  return [
+  /// 首页子路由列表
+  static final homeChildRoutes = <GetPage>[
+    // /// 会话页面：显示用户聊天会话列表（未启用）
     // GetPage(
-    //   name: Routes.CHAT, // 会话
+    //   name: Routes.CHAT,
     //   page: () => const ChatPage(),
+    //   transitionDuration: _defaultTransitionDuration,
+    //   curve: _defaultCurve,
     // ),
+
+    /// 消息页面：显示具体聊天会话的消息列表和输入框
     GetPage(
-      name: Routes.MESSAGE, // 消息
+      name: Routes.MESSAGE,
       page: () => MessagePage(),
-      curve: Curves.easeInOut,
-      transitionDuration: const Duration(milliseconds: 300),
-    ),
-    GetPage(
-      name: Routes.CHAT_INFO, // 聊天信息
-      page: () => ChatInfoPage(),
-    ),
-    GetPage(
-      name: Routes.ADD_FRIEND, //  添加好友
-      page: () => AddFriendPage(),
-    ),
-    // GetPage(
-    //   name: Routes.CONTACTS, // 通讯录
-    //   page: () => const ContactsPage(),
-    // ),
-    GetPage(
-      name: Routes.FRIEND_PROFILE, // 好友资料
-      page: () => const FriendProfilePage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
     ),
 
+    /// 聊天信息页面：显示用户或群聊的详细信息（如头像、名称、免打扰设置）
     GetPage(
-      name: Routes.MY_QR_CODE, // 我的好友二维码
-      page: () => const MyQRCodePage(),
+      name: Routes.CHAT_INFO,
+      page: () => ChatInfoPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
     ),
+
+    /// 添加好友页面：搜索和添加新好友
+    GetPage(
+      name: Routes.ADD_FRIEND,
+      page: () => AddFriendPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
+    ),
+
+    // /// 通讯录页面：显示联系人列表（未启用）
+    // GetPage(
+    //   name: Routes.CONTACTS,
+    //   page: () => const ContactsPage(),
+    //   transitionDuration: _defaultTransitionDuration,
+    //   curve: _defaultCurve,
+    // ),
+
+    /// 好友资料页面：显示好友的详细信息
+    GetPage(
+      name: Routes.FRIEND_PROFILE,
+      page: () => const FriendProfilePage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
+    ),
+
+    /// 我的二维码页面：展示用户二维码以便添加好友
+    GetPage(
+      name: Routes.MY_QR_CODE,
+      page: () => const MyQRCodePage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
+    ),
+
+    /// 好友请求页面：处理收到的好友请求
     GetPage(
       name: Routes.FRIEND_REQUESTS,
       page: () => const FriendRequestsPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
     ),
+
+    /// 扫一扫页面：扫描二维码添加好友或处理其他操作
     GetPage(
-      name: Routes.SCAN, // 扫一扫
+      name: Routes.SCAN,
       page: () => const ScanPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
     ),
+
+    /// 搜索页面：搜索用户、群聊或消息
     GetPage(
-        name: Routes.SEARCH, // 搜索
-        page: () => const SearchPage()),
+      name: Routes.SEARCH,
+      page: () => const SearchPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
+    ),
+
+    /// 视频通话页面：处理视频通话功能
     GetPage(
-      name: Routes.VIDEO_CALL, // 视频通话
+      name: Routes.VIDEO_CALL,
       page: () => const VideoCallPage(),
-    )
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
+    ),
   ];
+
+  /// 未知路由：处理无效路由，显示 404 页面
+  static final unknownRoute = GetPage(
+    name: Routes.UNKNOWN,
+    page: () => const UnknownView(),
+    transitionDuration: _defaultTransitionDuration,
+    curve: _defaultCurve,
+  );
 }

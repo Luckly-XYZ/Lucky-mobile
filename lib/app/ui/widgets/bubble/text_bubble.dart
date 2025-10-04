@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../utils/date.dart';
 import '../../../models/message_receive.dart';
 import '../../../routes/app_routes.dart';
 
 class MessageBubble extends StatelessWidget {
-  final MessageReceiveDto message;
+  final IMessage message;
 
   final bool isMe;
 
@@ -52,14 +51,6 @@ class MessageBubble extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                     ],
-                    Text(
-                      getTimeToDisplay(
-                          message.messageTime ?? 0, "yy/MM/dd", true),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
                     if (isMe) ...[
                       const SizedBox(width: 8),
                       Text(
@@ -87,7 +78,7 @@ class MessageBubble extends StatelessWidget {
                   ),
                   child: Text(
                     TextMessageBody.fromMessageBody(message.messageBody)
-                            ?.message ??
+                            ?.text ??
                         '',
                     style: const TextStyle(
                       fontSize: 16,

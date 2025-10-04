@@ -23,7 +23,7 @@ abstract class ChatsDao {
   Future<void> updateChat(Chats chat);
 
   @Query('DELETE FROM chats WHERE id = :id')
-  Future<void> deleteChat(int id);
+  Future<void> deleteChat(String id);
 
   @Query(
       'SELECT * FROM Chats WHERE ownerId =:ownerId ORDER BY messageTime DESC LIMIT 1')

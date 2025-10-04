@@ -20,6 +20,7 @@ dependencies:
   get_storage: ^2.1.1 # 本地存储
   workmanager: ^0.5.2 # 后台任务
   camera: ^0.10.5+9 # 摄像头
+  uuid: ^4.5.1 # 生成uuid
   #shared_preferences: ^2.2.2  # 用于本地存储
   flutter_secure_storage: ^9.2.4 # 敏感信息存储
   dio: ^5.3.2  # 网络请求
@@ -70,12 +71,16 @@ flutter:
     - assets/icons/
     - assets/data/
     - assets/logo/
+    - assets/fonts/
      # - assets/logo.png
 
 
   # 应用图标
 
-
+  fonts:
+    - family: Iconfont
+      fonts:
+        - asset: assets/fonts/iconfont.ttf
 
   # # 静态资源
   # assets:
