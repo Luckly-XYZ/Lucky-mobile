@@ -309,6 +309,39 @@ class IMessage {
       extra: message.extra != null ? _tryDecode(message.extra) : null,
     );
   }
+
+  /// 获取消息体的文本表示
+  String getMessageBodyText() {
+    if (messageBody == null) {
+      return '';
+    }
+
+    if (messageBody is TextMessageBody) {
+      return (messageBody as TextMessageBody).text ?? '';
+    } else if (messageBody is ImageMessageBody) {
+      return '[图片]';
+    } else if (messageBody is VideoMessageBody) {
+      return '[视频]';
+    } else if (messageBody is AudioMessageBody) {
+      return '[语音]';
+    } else if (messageBody is FileMessageBody) {
+      return '[文件]';
+    } else if (messageBody is LocationMessageBody) {
+      return '[位置]';
+    } else if (messageBody is ComplexMessageBody) {
+      return '[复合消息]';
+    } else if (messageBody is GroupInviteMessageBody) {
+      return '[群邀请]';
+    } else if (messageBody is SystemMessageBody) {
+      return (messageBody as SystemMessageBody).text ?? '[系统消息]';
+    } else if (messageBody is RecallMessageBody) {
+      return '[撤回消息]';
+    } else if (messageBody is EditMessageBody) {
+      return '[编辑消息]';
+    } else {
+      return '[未知类型消息]';
+    }
+  }
 }
 
 /// 消息体基类

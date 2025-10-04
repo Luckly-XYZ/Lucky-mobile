@@ -27,6 +27,7 @@ class AppConfig {
   // 其他配置
   static const int listRefreshTime = 10000; // 列表刷新时间（毫秒）
   static const String audioPath = 'assets/audio/'; // 音频文件路径
+  static const String notifi_title = 'Lucky';
 
   // 表情文件路径
   static const String emojiPath = 'assets/data/emoji_pack.json';

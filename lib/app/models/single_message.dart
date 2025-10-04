@@ -25,7 +25,7 @@ class SingleMessage {
   /// 消息发送时间戳（毫秒）
   int messageTime;
 
-  /// 应用层消息类型（如 chat/notification）
+  /// 应用层消息类型（如 chat/notification_service.dart）
   int messageType;
 
   /// 阅读状态：0 未读，1 已读

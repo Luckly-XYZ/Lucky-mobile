@@ -10,7 +10,7 @@ import 'package:workmanager/workmanager.dart';
 import 'app/bindings/app_bindings.dart';
 import 'app/database/app_database.dart';
 import 'app/routes/app_pages.dart';
-import 'app/translations/app_translations.dart';
+import './i18n/app_translations.dart';
 import 'config/app_config.dart';
 
 final getIt = GetIt.instance;

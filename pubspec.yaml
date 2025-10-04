@@ -15,6 +15,7 @@ dependencies:
   flutter_localizations: # 本地化
     sdk: flutter
   cupertino_icons: ^1.0.2 # 图标
+  flutter_timezone: ^4.1.1 # 时区
   get: ^4.6.6  # 用于状态管理和路由
   get_it: ^8.0.3
   get_storage: ^2.1.1 # 本地存储
@@ -45,8 +46,9 @@ dependencies:
   cached_network_image: ^3.3.0 # 图片缓存
   wakelock_plus: ^1.2.10 # 屏幕常亮
   flutter_launcher_icons: ^0.13.1  # 应用图标
-  protoc_plugin: ^22.4.0
-  protobuf: ^4.1.0
+  protoc_plugin: ^22.4.0 # protobuf
+  protobuf: ^4.1.0 # protobuf
+  flutter_local_notifications: ^18.0.1 # 本地通知
 
 
 dev_dependencies:

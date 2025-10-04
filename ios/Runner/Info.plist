@@ -55,5 +55,11 @@
     <string>需要访问相机进行视频通话</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>需要访问麦克风进行视频通话</string>
+    <key>NSUserNotificationAlertIdentifier</key>
+    <string>我们需要您的许可来发送通知</string>
+    <key>NSUserNotificationAlertTitle</key>
+    <string>请求通知权限</string>
+    <key>NSUserNotificationAlertBody</key>
+    <string>我们希望能够在您允许的情况下发送通知。</string>
 </dict>
 </plist>

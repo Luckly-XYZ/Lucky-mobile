@@ -232,12 +232,12 @@ class UserController extends GetxController with WidgetsBindingObserver {
         case IMessageType.singleMessage:
         case IMessageType.groupMessage:
           IMessage parsedMessage = IMessage.fromJson(message['data']);
-          var id = message.messageType == IMessageType.singleMessage.code
-              ? (IMessage.toSingleMessage(message, userId.value)).fromId ==
+          var id = parsedMessage.messageType == IMessageType.singleMessage.code
+              ? (IMessage.toSingleMessage(parsedMessage, userId.value)).fromId ==
               userId.value
-              ? message.toId
-              : message.fromId
-              : (IMessage.toGroupMessage(message, userId.value)).groupId;
+              ? parsedMessage.toId
+              : parsedMessage.fromId
+              : (IMessage.toGroupMessage(parsedMessage, userId.value)).groupId;
           _chatController.handleCreateOrUpdateChat(parsedMessage, id!, false);
           Get.log(
               'WebSocket ${contentType == IMessageType.singleMessage ? '单聊' : '群聊'}消息接收: $message');
