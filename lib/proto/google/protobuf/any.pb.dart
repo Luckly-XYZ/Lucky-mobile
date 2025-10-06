@@ -116,30 +116,47 @@ class Any extends $pb.GeneratedMessage with $mixin.AnyMixin {
 
   Any._();
 
-  factory Any.fromBuffer($core.List<$core.int> data, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(data, registry);
-  factory Any.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(json, registry);
+  factory Any.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Any', package: const $pb.PackageName(_omitMessageNames ? '' : 'google.protobuf'), createEmptyInstance: create, toProto3Json: $mixin.AnyMixin.toProto3JsonHelper, fromProto3Json: $mixin.AnyMixin.fromProto3JsonHelper)
+  factory Any.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Any',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'google.protobuf'),
+      createEmptyInstance: create,
+      toProto3Json: $mixin.AnyMixin.toProto3JsonHelper,
+      fromProto3Json: $mixin.AnyMixin.fromProto3JsonHelper)
     ..aOS(1, _omitFieldNames ? '' : 'typeUrl')
-    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'value', $pb.PbFieldType.OY)
-    ..hasRequiredFields = false
-  ;
+    ..a<$core.List<$core.int>>(
+        2, _omitFieldNames ? '' : 'value', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Any clone() => Any()..mergeFromMessage(this);
+
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Any copyWith(void Function(Any) updates) => super.copyWith((message) => updates(message as Any)) as Any;
+  Any copyWith(void Function(Any) updates) =>
+      super.copyWith((message) => updates(message as Any)) as Any;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
   static Any create() => Any._();
+
   @$core.override
   Any createEmptyInstance() => create();
+
   static $pb.PbList<Any> createRepeated() => $pb.PbList<Any>();
+
   @$core.pragma('dart2js:noInline')
-  static Any getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Any>(create);
+  static Any getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Any>(create);
   static Any? _defaultInstance;
 
   /// A URL/resource name that uniquely identifies the type of the serialized
@@ -172,35 +189,42 @@ class Any extends $pb.GeneratedMessage with $mixin.AnyMixin {
   /// used with implementation specific semantics.
   @$pb.TagNumber(1)
   $core.String get typeUrl => $_getSZ(0);
+
   @$pb.TagNumber(1)
   set typeUrl($core.String value) => $_setString(0, value);
+
   @$pb.TagNumber(1)
   $core.bool hasTypeUrl() => $_has(0);
+
   @$pb.TagNumber(1)
   void clearTypeUrl() => $_clearField(1);
 
   /// Must be a valid serialized protocol buffer of the above specified type.
   @$pb.TagNumber(2)
   $core.List<$core.int> get value => $_getN(1);
+
   @$pb.TagNumber(2)
   set value($core.List<$core.int> value) => $_setBytes(1, value);
+
   @$pb.TagNumber(2)
   $core.bool hasValue() => $_has(1);
+
   @$pb.TagNumber(2)
   void clearValue() => $_clearField(2);
+
   /// Creates a new [Any] encoding [message].
   ///
   /// The [typeUrl] will be [typeUrlPrefix]/`fullName` where `fullName` is
   /// the fully qualified name of the type of [message].
   static Any pack($pb.GeneratedMessage message,
-  {$core.String typeUrlPrefix = 'type.googleapis.com'}) {
+      {$core.String typeUrlPrefix = 'type.googleapis.com'}) {
     final result = create();
-    $mixin.AnyMixin.packIntoAny(result, message,
-        typeUrlPrefix: typeUrlPrefix);
+    $mixin.AnyMixin.packIntoAny(result, message, typeUrlPrefix: typeUrlPrefix);
     return result;
   }
 }
 
-
-const $core.bool _omitFieldNames = $core.bool.fromEnvironment('protobuf.omit_field_names');
-const $core.bool _omitMessageNames = $core.bool.fromEnvironment('protobuf.omit_message_names');
+const $core.bool _omitFieldNames =
+    $core.bool.fromEnvironment('protobuf.omit_field_names');
+const $core.bool _omitMessageNames =
+    $core.bool.fromEnvironment('protobuf.omit_message_names');

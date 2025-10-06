@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart'; // for debugPrint
+
 // 根据你的项目实际包名调整下面两个导入路径：
 import 'package:fixnum/fixnum.dart' show Int64;
+import 'package:flutter/foundation.dart'; // for debugPrint
 
 import 'google/protobuf/any.pb.dart';
 import 'google/protobuf/struct.pb.dart';
@@ -97,7 +98,8 @@ Map<String, dynamic> _anyToJson(Any any) {
       // Struct 提供 toProto3Json() 或者 fields 转换
       try {
         final dynamic structJson = s.toProto3Json();
-        if (structJson is Map<String, dynamic>  && structJson.containsKey('value')) return structJson['value'];
+        if (structJson is Map<String, dynamic> &&
+            structJson.containsKey('value')) return structJson['value'];
       } catch (_) {
         // 退到手动转换 fields
         final Map<String, dynamic> converted = {};

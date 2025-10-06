@@ -48,7 +48,7 @@ class SystemMessageBubble extends StatelessWidget {
   /// 构建时间标签
   Widget _buildTimeLabel() {
     return Text(
-      getTimeToDisplay(message.messageTime ?? 0, _timeFormat, true),
+      DateUtil.getTimeToDisplay(message.messageTime ?? 0, _timeFormat, true),
       style: _timeStyle,
       textAlign: TextAlign.center,
     );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../routes/app_routes.dart';
 import '../../../controller/contact_controller.dart';
-import '../../../routes/app_routes.dart';
 
 class AddFriendPage extends StatelessWidget {
   AddFriendPage({Key? key}) : super(key: key);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../routes/app_routes.dart';
+import '../../../../routes/app_routes.dart';
 
 /// 404 页面，显示页面未找到的错误提示
 /// 特性：

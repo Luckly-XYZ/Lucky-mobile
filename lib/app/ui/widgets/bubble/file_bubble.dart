@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../routes/app_routes.dart';
 import '../../../models/message_receive.dart';
-import '../../../routes/app_routes.dart';
 import '../icon/icon_font.dart';
 
 /// 文件消息气泡组件，显示聊天中的文件消息

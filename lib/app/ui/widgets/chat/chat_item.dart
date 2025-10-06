@@ -88,7 +88,7 @@ class ChatItem extends StatelessWidget {
 
               /// 消息时间
               Text(
-                getTimeToDisplay(chats.messageTime, _timeFormat, true),
+                DateUtil.getTimeToDisplay(chats.messageTime, _timeFormat, true),
                 style: _timeStyle,
                 overflow: TextOverflow.ellipsis,
               ),

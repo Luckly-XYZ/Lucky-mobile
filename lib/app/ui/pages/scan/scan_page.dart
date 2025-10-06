@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 import '../../../../constants/app_constant.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../../utils/audio.dart';
-import '../../../routes/app_routes.dart';
 import 'login_authorization_page.dart';
 
 /// 扫一扫页面，支持扫描二维码并处理 URL、登录授权和好友资料

@@ -80,7 +80,8 @@ class CustomBadge extends StatefulWidget {
   State<CustomBadge> createState() => _BadgeState();
 }
 
-class _BadgeState extends State<CustomBadge> with SingleTickerProviderStateMixin {
+class _BadgeState extends State<CustomBadge>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _rippleController;
 
   @override

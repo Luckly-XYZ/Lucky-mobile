@@ -20,8 +20,22 @@ const IMConnectMessage$json = {
   '2': [
     {'1': 'code', '3': 1, '4': 1, '5': 5, '10': 'code'},
     {'1': 'token', '3': 2, '4': 1, '5': 9, '10': 'token'},
-    {'1': 'data', '3': 3, '4': 1, '5': 11, '6': '.google.protobuf.Any', '10': 'data'},
-    {'1': 'metadata', '3': 4, '4': 3, '5': 11, '6': '.im.IMConnectMessage.MetadataEntry', '10': 'metadata'},
+    {
+      '1': 'data',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Any',
+      '10': 'data'
+    },
+    {
+      '1': 'metadata',
+      '3': 4,
+      '4': 3,
+      '5': 11,
+      '6': '.im.IMConnectMessage.MetadataEntry',
+      '10': 'metadata'
+    },
     {'1': 'message', '3': 5, '4': 1, '5': 9, '10': 'message'},
     {'1': 'request_id', '3': 6, '4': 1, '5': 9, '10': 'requestId'},
     {'1': 'timestamp', '3': 7, '4': 1, '5': 3, '10': 'timestamp'},
@@ -53,4 +67,3 @@ final $typed_data.Uint8List iMConnectMessageDescriptor = $convert.base64Decode(
     'VudElwEh0KCnVzZXJfYWdlbnQYCSABKAlSCXVzZXJBZ2VudBIfCgtkZXZpY2VfbmFtZRgKIAEo'
     'CVIKZGV2aWNlTmFtZRIfCgtkZXZpY2VfdHlwZRgLIAEoCVIKZGV2aWNlVHlwZRo7Cg1NZXRhZG'
     'F0YUVudHJ5EhAKA2tleRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAE=');
-

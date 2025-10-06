@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../constants/app_message.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../../utils/date.dart';
 import '../../../controller/chat_controller.dart';
 import '../../../controller/user_controller.dart';
 import '../../../models/message_receive.dart';
-import '../../../routes/app_routes.dart';
 import '../../widgets/bubble/file_bubble.dart';
 import '../../widgets/bubble/image_bubble.dart';
 import '../../widgets/bubble/system_bubble.dart';
@@ -200,7 +200,8 @@ class MessagePage extends GetView<ChatController> {
           Padding(
             padding: _timePadding,
             child: Text(
-              getTimeToDisplay(message.messageTime ?? 0, _timeFormat, true),
+              DateUtil.getTimeToDisplay(
+                  message.messageTime ?? 0, _timeFormat, true),
               style: _timeStyle,
               textAlign: TextAlign.center,
             ),
@@ -218,9 +219,8 @@ class MessagePage extends GetView<ChatController> {
       return true; // 最后一条消息（时间线上最早）始终显示时间
     }
     final prevMessage = controller.messageList[index + 1];
-    final currentTime = message.messageTime ?? 0;
-    final prevTime = prevMessage.messageTime ?? 0;
-    return (currentTime - prevTime).abs() >= _timeDiffThreshold.inMilliseconds;
+    return DateUtil.shouldDisplayTime(
+        message.messageTime, prevMessage.messageTime);
   }
 
   /// 消息气泡映射表

@@ -1,102 +1,109 @@
 name: flutter_im
 description: A Flutter IM application
 
-publish_to: 'none'
+publish_to: 'none' # 发布模式：'none' 表示不使用 pub.dev 发布，仅本地开发使用
 
-# 版本号
-version: 1.0.0+1
+# 应用版本信息
+version: 1.0.0+1 # 版本号：语义化版本 + 构建号（major.minor.patch+build）
 
+# SDK 环境要求
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0' # Dart/Flutter SDK 版本约束：最低 3.0.0，高于 4.0.0 不支持
 
+# 生产依赖（dependencies）
 dependencies:
   flutter:
-    sdk: flutter
-  flutter_localizations: # 本地化
-    sdk: flutter
-  cupertino_icons: ^1.0.2 # 图标
-  flutter_timezone: ^4.1.1 # 时区
-  get: ^4.6.6  # 用于状态管理和路由
-  get_it: ^8.0.3
-  get_storage: ^2.1.1 # 本地存储
-  workmanager: ^0.5.2 # 后台任务
-  camera: ^0.10.5+9 # 摄像头
-  uuid: ^4.5.1 # 生成uuid
-  #shared_preferences: ^2.2.2  # 用于本地存储
-  flutter_secure_storage: ^9.2.4 # 敏感信息存储
-  dio: ^5.3.2  # 网络请求
-  flutter_easyloading: ^3.0.3   # loading 遮盖层
-  provider: ^6.0.5 # 状态管理
-  floor: ^1.5.0 # 数据库orm
-  web_socket_channel: ^2.4.0 # websocket
-  permission_handler: ^11.2.1  # 权限处理
-  audioplayers: ^6.1.1  # 播放声音
-  audio_session: ^0.1.6
-  logger: ^1.0.0  # 日志
-  fast_rsa: ^3.7.1 # rsa加密解密
-  mobile_scanner: ^4.0.1          # 用于扫描二维码
-  image_picker: ^1.0.7    # 用于从相册选择图片
-  flutter_svg: ^2.0.17 # svg图标
-  qr_flutter: ^4.1.0 # 二维码生成
-  webview_flutter: ^4.10.0 # 网页浏览
-  url_launcher: ^6.3.1 # 打开网页或app
-  video_player: ^2.8.2 # 视频播放
-  photo_view: ^0.14.0 # 图片查看
-  flutter_webrtc: ^0.12.8 # webrtc
-  cached_network_image: ^3.3.0 # 图片缓存
-  wakelock_plus: ^1.2.10 # 屏幕常亮
-  flutter_launcher_icons: ^0.13.1  # 应用图标
-  protoc_plugin: ^22.4.0 # protobuf
-  protobuf: ^4.1.0 # protobuf
-  flutter_local_notifications: ^18.0.1 # 本地通知
+    sdk: flutter # 核心框架：Flutter SDK，必填
 
+  # 本地化与国际化
+  flutter_localizations:
+    sdk: flutter # 支持多语言本地化
 
+  # UI 组件与图标
+  cupertino_icons: ^1.0.2 # Cupertino 风格图标库
+  flutter_svg: ^2.0.17 # SVG 矢量图标支持
+  flutter_launcher_icons: ^0.13.1  # 生成应用启动图标（dev 工具，但此处用于配置）
+
+  # 状态管理与依赖注入
+  get: ^4.6.6 # GetX：状态管理、路由、依赖注入
+  get_it: ^8.0.3 # 服务定位器：依赖注入
+  provider: ^6.0.5 # 状态管理：Provider 模式
+
+  # 网络与通信
+  dio: ^5.3.2 # HTTP 客户端：网络请求封装
+  web_socket_channel: ^2.4.0 # WebSocket 客户端：实时通信
+  flutter_webrtc: ^1.2.0 # WebRTC：视频/音频通话
+
+  # 存储与持久化
+  get_storage: ^2.1.1 # 轻量级键值存储：GetX 专用
+  flutter_secure_storage: ^9.2.4 # 安全存储：敏感数据（如 Token）
+  floor: ^1.5.0 # SQLite ORM：本地数据库
+
+  # 媒体与多媒体
+  camera: ^0.10.5+9 # 摄像头：拍照/录像
+  image_picker: ^1.0.7 # 图片选择：从相册/相机获取
+  audioplayers: ^6.1.1 # 音频播放：消息提示音
+  audio_session: ^0.1.6 # 音频会话：iOS 音频配置
+  video_player: ^2.8.2 # 视频播放：消息视频
+  cached_network_image: ^3.3.0 # 网络图片缓存：头像/图片加载
+  photo_view: ^0.14.0 # 图片查看器：缩放/平移
+
+  # 通知与后台任务
+  flutter_local_notifications: ^18.0.1 # 本地通知：消息提醒
+  workmanager: ^0.9.0+3 # 后台任务：定时同步
+
+  # 工具与实用库
+  uuid: ^4.5.1 # UUID 生成：消息 ID
+  flutter_timezone: ^4.1.1 # 时区处理：跨时区消息时间
+  permission_handler: ^11.2.1 # 权限管理：相机/通知等
+  logger: ^2.0.2+1  # 日志记录：调试输出
+  fast_rsa: ^3.7.1 # RSA 加密：消息加密
+  mobile_scanner: ^4.0.1 # 二维码扫描：登录/添加好友
+  qr_flutter: ^4.1.0 # 二维码生成：分享
+  webview_flutter: ^4.10.0 # WebView：嵌入网页
+  url_launcher: ^6.3.2 # URL 启动：打开外部链接/App
+  wakelock_plus: ^1.2.10 # 屏幕唤醒：通话保持亮屏
+  share_plus: ^11.0.0  # 分享：消息/文件分享
+  json_annotation: ^4.9.0  # JSON 序列化：数据模型
+  protobuf: ^4.1.0 # Protobuf：高效序列化（IM 协议）
+  protoc_plugin: ^22.4.0 # Protobuf 代码生成（dev 工具，但此处用于配置）
+
+  # 加载与 UI 增强
+  flutter_easyloading: ^3.0.3 # 加载动画：全局 Loading
+
+# 开发依赖（dev_dependencies）
 dev_dependencies:
   flutter_test:
-    sdk: flutter
-  flutter_lints: ^2.0.0
-  floor_generator: ^1.5.0
-  build_runner: ^2.4.14
+    sdk: flutter # 单元/集成测试框架
+  flutter_lints: ^2.0.0 # 代码 lint 规则：代码质量检查
 
+  # 代码生成工具
+  floor_generator: ^1.5.0 # Floor ORM 代码生成
+  build_runner: ^2.4.13 # 构建运行器：生成代码
+  flutter_native_splash: ^2.4.4 # 原生启动屏生成
 
-
-# flutter 相关的配置选项
+# Flutter 配置
 flutter:
-  # 默认的 Material Design 字体图标
+  # 使用 Material Design 图标和字体
   uses-material-design: true
 
-  
-
-  # 静态资源
+  # 静态资源配置
   assets:
-    - assets/audio/
-    - assets/icons/
-    - assets/data/
-    - assets/logo/
-    - assets/fonts/
-     # - assets/logo.png
+    - assets/audio/ # 音频资源：消息提示音
+    - assets/icons/ # 图标资源：自定义图标
+    - assets/data/ # 数据资源：默认配置/JSON
+    - assets/logo/  # 应用 Logo：启动图标等
+    - assets/fonts/ # 字体资源：自定义字体
 
-
-  # 应用图标
-
+  # 自定义字体配置
   fonts:
     - family: Iconfont
       fonts:
-        - asset: assets/fonts/iconfont.ttf
+        - asset: assets/fonts/iconfont.ttf  # 自定义图标字体：iconfont.ttf
 
-  # # 静态资源
-  # assets:
-  #   - assets/images/login/
-
-  # 自定义字体图标（该脚手架没有用这个，用的是 Flutter 自带的默认 Icons）
-  # 使用教程 https://book.flutterchina.club/chapter3/img_and_icon.html#_3-3-2-icon
-  # fonts:
-  #   - family: iconfont
-  #     fonts:
-  #       - asset: assets/icons/iconfont.ttf
-
+# 应用图标生成配置
 flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/logo/app_icon.png"  # 图标路径
-#  adaptive_icon_background: "#FFFFFF"  # Android 适应性图标背景色
+  android: "launcher_icon"  # Android 图标名称
+  ios: true # iOS 图标生成：启用
+  image_path: "assets/logo/app_icon.png" # 源图标路径：PNG 文件
+  # adaptive_icon_background: "#FFFFFF"  # Android 自适应图标背景色：白色（可选，注释掉以使用默认）

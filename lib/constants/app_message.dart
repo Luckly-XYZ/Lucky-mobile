@@ -1,6 +1,5 @@
 // 定义消息类型枚举
 enum IMessageType {
-
   error(-1, '信息异常'),
   loginOver(900, '登录过期'),
   refreshToken(999, '刷新token'),
@@ -16,7 +15,6 @@ enum IMessageType {
   robot(2000, '机器人'),
   publicAccount(2001, '公众号'),
   messageAction(3000, '消息更新');
-
 
   // 定义字段
   final int code;
@@ -64,7 +62,6 @@ enum IMessageContentType {
   groupInvite(8, '群组邀请'),
   groupJoinApprove(9, '群组加入审批'),
   tip(10, '系统提示'),
-
   rtcCall(101, '呼叫'),
   rtcAccept(102, '接受'),
   rtcReject(103, '拒绝'),
@@ -72,7 +69,6 @@ enum IMessageContentType {
   rtcFailed(105, '呼叫失败'),
   rtcHangup(106, '挂断'),
   rtcCandidate(107, '同步candidate');
-
 
   // 定义字段
   final int code;

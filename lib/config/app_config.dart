@@ -17,7 +17,7 @@ class AppConfig {
   static const String appCopyright = '© 2023 im. All rights reserved.';
   static const String deviceType = 'mobile'; // 修改为移动端
   static const String protocolType = 'proto';
-  static const String defaultUrl = 'https://www.bing.com'; // 默认url
+  static const String defaultUrl = 'https://luckly-xyz.github.io'; // 默认url
 
   // 存储相关
   static const String storeName = 'im_store';
@@ -28,6 +28,7 @@ class AppConfig {
   static const int listRefreshTime = 10000; // 列表刷新时间（毫秒）
   static const String audioPath = 'assets/audio/'; // 音频文件路径
   static const String notifi_title = 'Lucky';
+  static const int should_display_time = 5; // 显示时间的间隔（分钟）
 
   // 表情文件路径
   static const String emojiPath = 'assets/data/emoji_pack.json';

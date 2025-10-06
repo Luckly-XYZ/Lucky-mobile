@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../constants/app_sizes.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../controller/user_controller.dart';
-import '../../../routes/app_routes.dart';
-import '../../widgets/icon/icon_font.dart';
 
 /// 个人中心页面，展示用户信息和功能入口
 /// 特性：
@@ -152,7 +151,7 @@ class MyPage extends StatelessWidget {
 
               /// 二维码按钮
               IconButton(
-                icon:  const Icon(Icons.qr_code, size: kSize22),
+                icon: const Icon(Icons.qr_code, size: kSize22),
                 onPressed: () =>
                     Get.toNamed('${Routes.HOME}${Routes.MY_QR_CODE}'),
               ),

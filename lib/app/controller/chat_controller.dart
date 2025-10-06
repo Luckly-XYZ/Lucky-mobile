@@ -4,17 +4,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_im/app/api/api_service.dart';
 import 'package:flutter_im/app/api/event_bus_service.dart';
 import 'package:flutter_im/app/models/friend.dart';
-import 'package:flutter_im/config/app_config.dart';
 import 'package:flutter_im/constants/app_message.dart';
 import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../routes/app_routes.dart';
 import '../api/notification_service.dart';
 import '../database/app_database.dart';
 import '../models/chats.dart';
 import '../models/message_receive.dart';
-import '../routes/app_routes.dart';
 import '../ui/widgets/video/video_call_snackbar.dart';
 
 /// 聊天控制器，管理会话列表、消息列表及相关操作
@@ -54,7 +53,7 @@ class ChatController extends GetxController {
   void onInit() {
     super.onInit();
     _apiService = Get.find<ApiService>();
-     _localNotificationService = Get.find<LocalNotificationService>();
+    _localNotificationService = Get.find<LocalNotificationService>();
   }
 
   /// 创建或更新会话
@@ -111,7 +110,10 @@ class ChatController extends GetxController {
       await _db.groupMessageDao
           .insertMessage(IMessage.toGroupMessage(dto, userId.value));
     }
-    _localNotificationService.showNotification(id: 999, title: chat.name, body: dto.getMessageBodyText());
+    if (dto.fromId != userId.value && currentChat.value?.toId != dto.fromId) {
+      _localNotificationService.showNotification(
+          id: 999, title: chat.name, body: dto.getMessageBodyText());
+    }
     if (currentChat.value?.id == chat.id) {
       messageList.add(dto);
       messageList

@@ -3,7 +3,6 @@
 typedef JsonLike = Map<String, dynamic>;
 
 class Objects {
-
   Objects._();
 
   /// 通用判空：支持 String / Iterable / Map / null / num / bool / 自定义对象 (尝试 toJson/toMap)
@@ -70,10 +69,12 @@ class Objects {
     return false;
   }
 
-  static bool isNotEmpty(Object? value, {bool deep = false}) => !isEmpty(value, deep: deep);
+  static bool isNotEmpty(Object? value, {bool deep = false}) =>
+      !isEmpty(value, deep: deep);
 
   /// 判断字符串是否为 null / 空 / 全空白
   static bool isBlank(String? s) => s == null || s.trim().isEmpty;
+
   static bool isNotBlank(String? s) => !isBlank(s);
 }
 
@@ -81,6 +82,7 @@ class Objects {
 ///   myString.isNullOrEmpty  或  myList.isNullOrEmpty
 extension NullableStringExtensions on String? {
   bool get isNullOrEmpty => this == null || this!.isEmpty;
+
   bool get isNullOrBlank => this == null || this!.trim().isEmpty;
 }
 

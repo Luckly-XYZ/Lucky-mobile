@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/io.dart';
 import 'package:get/get.dart';
@@ -30,8 +31,10 @@ class HttpService extends GetxService {
 
     // 仅在调试模式下启用忽略 SSL 证书验证（用于抓包调试）
     if (AppConfig.debug) {
-      (_dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate = (client) {
-        client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      (_dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
+          (client) {
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => true;
         return client;
       };
     }
@@ -52,7 +55,8 @@ class HttpService extends GetxService {
         return handler.next(options);
       },
       onResponse: (response, handler) {
-        Get.log('✅ 响应成功: ${response.statusCode} ${response.requestOptions.uri}');
+        Get.log(
+            '✅ 响应成功: ${response.statusCode} ${response.requestOptions.uri}');
         return handler.next(response);
       },
       onError: (dio.DioException e, handler) {
@@ -68,7 +72,8 @@ class HttpService extends GetxService {
   /// [path] 请求路径
   /// [params] 查询参数（可选）
   /// 返回: 解析后的 JSON 数据（Map<String, dynamic>）或 null（失败时）
-  Future<Map<String, dynamic>?> get(String path, {Map<String, dynamic>? params}) async {
+  Future<Map<String, dynamic>?> get(String path,
+      {Map<String, dynamic>? params}) async {
     try {
       final response = await _dio.get(path, queryParameters: params);
       return _processResponse(response);
@@ -126,7 +131,8 @@ class HttpService extends GetxService {
       dio.DioExceptionType.connectionTimeout => '⏳ 连接超时',
       dio.DioExceptionType.sendTimeout => '🚀 发送数据超时',
       dio.DioExceptionType.receiveTimeout => '⚠️ 接收数据超时',
-      dio.DioExceptionType.badResponse => '❌ 服务器错误: ${error.response?.statusCode}',
+      dio.DioExceptionType.badResponse =>
+        '❌ 服务器错误: ${error.response?.statusCode}',
       dio.DioExceptionType.cancel => '❎ 请求被取消',
       dio.DioExceptionType.unknown => '🤷 未知网络错误: ${error.message}',
       _ => '🛑 其他错误: ${error.message}',

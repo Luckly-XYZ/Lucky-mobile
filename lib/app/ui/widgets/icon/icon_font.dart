@@ -26,7 +26,6 @@ class Iconfont {
   static const IconData search = IconData(0xe699, fontFamily: _fontFamily);
   static const IconData contacts = IconData(0xe607, fontFamily: _fontFamily);
 
-
   // 获取文件图标
   static const Map<String, String> _fileIconMap = {
     'md': '#icon-Markdown',
@@ -42,7 +41,6 @@ class Iconfont {
     'pptx': '#icon-file-b-4',
     'txt': '#icon-file-b-2',
   };
-
 
   /// 根据图标名称获取 IconData
   /// 如果找不到对应图标，则返回默认图标

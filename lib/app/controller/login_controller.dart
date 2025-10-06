@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 
-import '../routes/app_routes.dart';
+import '../../routes/app_routes.dart';
 import 'user_controller.dart';
 
 /// 登录类型枚举

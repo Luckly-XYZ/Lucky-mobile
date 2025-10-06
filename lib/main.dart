@@ -7,10 +7,10 @@ import 'package:get_it/get_it.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:workmanager/workmanager.dart';
 
+import './i18n/app_trans.dart';
+import './routes/app_pages.dart';
 import 'app/bindings/app_bindings.dart';
 import 'app/database/app_database.dart';
-import 'app/routes/app_pages.dart';
-import './i18n/app_translations.dart';
 import 'config/app_config.dart';
 
 final getIt = GetIt.instance;

@@ -18,8 +18,11 @@ pluginManagement {
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    id "com.android.application" version "8.1.0" apply false
-    id "org.jetbrains.kotlin.android" version "1.8.22" apply false
+    // 将 AGP 升级到 >= 8.2.1 以修复 Java 21 相关已知 bug
+    id "com.android.application" version "8.6.0" apply false
+    // Kotlin 插件与 AGP 兼容建议使用 1.9.22（可按需要微调）
+    //noinspection NewerVersionAvailable
+    id "org.jetbrains.kotlin.android" version "2.1.0" apply false
 }
 
 include ":app"

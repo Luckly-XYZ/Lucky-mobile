@@ -32,6 +32,12 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- 禁用 Crashlytics 自动收集 -->
+            <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false"/>
+
+            <!-- 如果使用 Performance Monitoring，可以添加（部分版本中该 key 有效） -->
+            <meta-data android:name="firebase_performance_collection_enabled" android:value="false"/>
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

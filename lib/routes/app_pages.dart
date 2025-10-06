@@ -1,19 +1,19 @@
 import 'package:flutter/animation.dart';
 import 'package:get/get.dart';
 
-import '../ui/pages/contacts/add_friend_page.dart';
-import '../ui/pages/contacts/friend_requests_page.dart';
-import '../ui/pages/friend/friend_profile_page.dart';
-import '../ui/pages/home/home_page.dart';
-import '../ui/pages/login/login_page.dart';
-import '../ui/pages/message/chat_info_page.dart';
-import '../ui/pages/message/message_page.dart';
-import '../ui/pages/my/my_qr_code_page.dart';
-import '../ui/pages/scan/scan_page.dart';
-import '../ui/pages/search/search_page.dart';
-import '../ui/pages/unknow/unknown_page.dart';
-import '../ui/pages/video/video_call_page.dart';
-import '../ui/pages/webview/webview_page.dart';
+import '../app/ui/pages/contacts/add_friend_page.dart';
+import '../app/ui/pages/contacts/friend_requests_page.dart';
+import '../app/ui/pages/friend/friend_profile_page.dart';
+import '../app/ui/pages/home/home_page.dart';
+import '../app/ui/pages/login/login_page.dart';
+import '../app/ui/pages/message/chat_info_page.dart';
+import '../app/ui/pages/message/message_page.dart';
+import '../app/ui/pages/my/my_qr_code_page.dart';
+import '../app/ui/pages/scan/scan_page.dart';
+import '../app/ui/pages/search/search_page.dart';
+import '../app/ui/pages/unknow/unknown_page.dart';
+import '../app/ui/pages/video/video_call_page.dart';
+import '../app/ui/pages/webview/webview_page.dart';
 import 'app_route_auth.dart';
 import 'app_routes.dart';
 

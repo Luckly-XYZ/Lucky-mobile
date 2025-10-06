@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../routes/app_routes.dart';
 import '../../../controller/contact_controller.dart';
 import '../../../models/friend.dart';
-import '../../../routes/app_routes.dart';
 import '../../widgets/contacts/user_avatar_name.dart';
 
 class ContactsPage extends GetView<ContactController> {

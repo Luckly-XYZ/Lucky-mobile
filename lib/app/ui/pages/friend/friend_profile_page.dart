@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import '../../../../routes/app_routes.dart';
 import '../../../api/api_service.dart';
 import '../../../controller/chat_controller.dart';
 import '../../../controller/contact_controller.dart';
 import '../../../models/friend.dart';
-import '../../../routes/app_routes.dart';
 
 /// 好友资料页面，展示好友或非好友的个人信息及操作按钮
 /// 特性：

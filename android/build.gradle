@@ -1,13 +1,35 @@
 allprojects {
     repositories {
-        //google() // 这行注释
-        //avenCentral() //这行也注释，底下三行加上去
-//        google()
-//        mavenCentral()
-        maven { url 'https://maven.aliyun.com/repository/central' }          //新增
-        maven { url 'https://maven.aliyun.com/repository/public' }           //新增
-        maven { url 'https://maven.aliyun.com/repository/google'}            //新增
-        maven { url 'https://maven.aliyun.com/repository/gradle-plugin'}     //新增
+        // 官方仓库：务必放最前
+        google()
+        mavenCentral()
+
+        // 可选：Gradle Plugin Portal（有些 plugin 会在这里）
+        maven { url 'https://plugins.gradle.org/m2/' }
+
+        // 可选：本地文件仓库（仅当确实需要时）
+        // 注意：如果路径包含空格，需要 URL encode 或使用正确格式
+        // maven { url 'file:///D:/Program%20Files/Maven/MavenRepository' }
+        // 或
+        maven { url = file('D:/Program%20Files/Maven/MavenRepository') }
+
+        // 本地仓库（若你有本地构件），建议放在官方仓库之后，避免覆盖
+        mavenLocal()
+
+        // 常用国内镜像（按需启用，放在官方之后）
+        // 阿里云镜像
+        maven { url 'https://maven.aliyun.com/repository/public/' }
+        maven { url 'https://maven.aliyun.com/repository/google/' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin/' }
+        maven { url 'https://maven.aliyun.com/repository/central/' }
+        // 华为云镜像
+        maven { url 'https://repo.huaweicloud.com/repository/maven/' }
+        // 腾讯云镜像
+        maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+        // 网易镜像
+        maven { url 'https://mirrors.163.com/maven/repository/maven-public/' }
+        // 首都在线
+        maven { url 'https://maven.oscs.oschina.net/content/groups/public/' }
     }
 }
 

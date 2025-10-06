@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../constants/app_sizes.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../controller/chat_controller.dart';
 import '../../../controller/user_controller.dart';
 import '../../../models/chats.dart';
-import '../../../routes/app_routes.dart';
 import '../../widgets/chat/chat_item.dart';
 import '../../widgets/icon/icon_font.dart';
-
 
 /// 聊天页面，显示会话列表并支持跳转到聊天详情
 /// 特性：
@@ -24,7 +23,8 @@ class ChatPage extends GetView<ChatController> {
   static const _avatarSize = kSize36; // 头像尺寸
   static const _avatarBorderRadius = 6.0; // 头像圆角
   static const _appBarHeight = kToolbarHeight; // AppBar 高度
-  static const _chatItemPadding = EdgeInsets.symmetric(horizontal: kSize10, vertical: kSize6); // 聊天项外边距
+  static const _chatItemPadding =
+      EdgeInsets.symmetric(horizontal: kSize10, vertical: kSize6); // 聊天项外边距
   static const _menuWidth = 150.0; // 弹出菜单宽度
   static const _emptyText = '暂无聊天记录'; // 空状态提示
 
@@ -81,13 +81,15 @@ class ChatPage extends GetView<ChatController> {
           fit: BoxFit.cover,
           placeholder: (context, url) => Container(
             color: Colors.grey[300],
-            child: Iconfont.buildIcon(icon: Iconfont.person, size: 24, color: Colors.grey),
+            child: Iconfont.buildIcon(
+                icon: Iconfont.person, size: 24, color: Colors.grey),
           ),
           errorWidget: (context, url, error) {
             debugPrint('加载头像失败: $error');
             return Container(
               color: Colors.grey[300],
-              child: Iconfont.buildIcon(icon: Iconfont.person, size: 24, color: Colors.grey),
+              child: Iconfont.buildIcon(
+                  icon: Iconfont.person, size: 24, color: Colors.grey),
             );
           },
         ),
@@ -102,7 +104,11 @@ class ChatPage extends GetView<ChatController> {
         padding: const EdgeInsets.only(left: 12),
         child: Text(
           username,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold) ?? const TextStyle(fontSize: kSize20, fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold) ??
+              const TextStyle(fontSize: kSize20, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -129,7 +135,8 @@ class ChatPage extends GetView<ChatController> {
         value: 'create_group',
         child: Row(
           children: [
-            Iconfont.buildIcon(icon: Iconfont.add, size: 20, color: Colors.black54),
+            Iconfont.buildIcon(
+                icon: Iconfont.add, size: 20, color: Colors.black54),
             const SizedBox(width: 12),
             const Text('创建群聊'),
           ],
@@ -139,7 +146,8 @@ class ChatPage extends GetView<ChatController> {
         value: 'scan',
         child: Row(
           children: [
-            Iconfont.buildIcon(icon: Iconfont.scan, size: 20, color: Colors.black54),
+            Iconfont.buildIcon(
+                icon: Iconfont.scan, size: 20, color: Colors.black54),
             const SizedBox(width: 12),
             const Text('扫一扫'),
           ],
@@ -149,7 +157,8 @@ class ChatPage extends GetView<ChatController> {
         value: 'add_friend',
         child: Row(
           children: [
-            Iconfont.buildIcon(icon: Iconfont.addFriend, size: 20, color: Colors.black54),
+            Iconfont.buildIcon(
+                icon: Iconfont.addFriend, size: 20, color: Colors.black54),
             const SizedBox(width: 12),
             const Text('加好友/群'),
           ],
@@ -204,7 +213,11 @@ class ChatPage extends GetView<ChatController> {
     return Center(
       child: Text(
         _emptyText,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black54) ?? const TextStyle(fontSize: kSize16, color: Colors.black54),
+        style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: Colors.black54) ??
+            const TextStyle(fontSize: kSize16, color: Colors.black54),
       ),
     );
   }

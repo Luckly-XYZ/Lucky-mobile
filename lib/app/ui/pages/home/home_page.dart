@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 
 import '../../../controller/chat_controller.dart';
 import '../../../controller/home_controller.dart';
-import '../../widgets/icon/icon_font.dart';
 import '../../widgets/badge/badge.dart';
+import '../../widgets/icon/icon_font.dart';
 import '../chat/chat_page.dart';
 import '../contacts/contacts_page.dart';
 import '../my/my_page.dart';
@@ -36,7 +36,7 @@ class HomePage extends GetView<HomeController> {
       bottomNavigationBar: Obx(() => BottomNavigationBar(
             currentIndex: controller.currentIndex.value,
             onTap: controller.changeTabIndex,
-            items: _buildNavItems(chatList),
+            items: _buildNavItems(chatList, controller.currentIndex.value),
           )),
     );
   }
@@ -44,18 +44,24 @@ class HomePage extends GetView<HomeController> {
   // --- UI 构建方法 ---
 
   /// 构建底部导航栏项
-  List<BottomNavigationBarItem> _buildNavItems(RxList chatList) {
+  List<BottomNavigationBarItem> _buildNavItems(
+      RxList chatList, int currentIndex) {
     return _navItems.asMap().entries.map((entry) {
       final index = entry.key;
       final item = entry.value;
+
+      // 根据当前选中的索引设置图标颜色
+      final iconColor =
+          index == currentIndex ? const Color(0xFF409EFF) : Colors.black38;
 
       // 计算未读消息数（仅对"消息"页面显示徽章）
       final unreadCount = index == 0
           ? chatList.fold(0, (sum, chat) => sum + chat.unread as int)
           : 0;
       return BottomNavigationBarItem(
-        icon:  CustomBadge(
-          child: Iconfont.buildIcon(icon: item.icon, size: 25, color: Colors.black38),
+        icon: CustomBadge(
+          child:
+              Iconfont.buildIcon(icon: item.icon, size: 25, color: iconColor),
           count: unreadCount,
           max: 99,
         ),

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../constants/app_sizes.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../controller/home_controller.dart';
 import '../../../controller/user_controller.dart';
-import '../../../routes/app_routes.dart';
 
 /// 登录授权页面，确认用户通过二维码扫描登录设备
 /// 特性：

@@ -49,6 +49,7 @@ class _MessageInputState extends State<MessageInput> {
   @override
   void initState() {
     super.initState();
+
     /// 初始化控制器和监听器
     _richTextController = widget.textController;
     _richTextController.addListener(_onTextChanged);
@@ -85,7 +86,8 @@ class _MessageInputState extends State<MessageInput> {
         selection.baseOffset == text.length &&
         text.endsWith(_mentionTrigger) &&
         (text.length == 1 || text[text.length - 2] == ' ')) {
-      if (widget.controller.currentChat.value?.chatType == IMessageType.groupMessage.code) {
+      if (widget.controller.currentChat.value?.chatType ==
+          IMessageType.groupMessage.code) {
         _showMentionDrawer();
       }
     }
@@ -114,7 +116,9 @@ class _MessageInputState extends State<MessageInput> {
       return;
     }
 
-    final newText = text.substring(0, selection.baseOffset - 1) + '@$username ' + text.substring(selection.baseOffset);
+    final newText = text.substring(0, selection.baseOffset - 1) +
+        '@$username ' +
+        text.substring(selection.baseOffset);
     final newCursorPosition = selection.baseOffset - 1 + username.length + 2;
 
     _richTextController.value = TextEditingValue(
@@ -128,7 +132,9 @@ class _MessageInputState extends State<MessageInput> {
   void _insertEmoji(String emoji) {
     final text = _richTextController.text;
     final selection = _richTextController.selection;
-    final newText = text.substring(0, selection.baseOffset) + emoji + text.substring(selection.baseOffset);
+    final newText = text.substring(0, selection.baseOffset) +
+        emoji +
+        text.substring(selection.baseOffset);
     final newCursorPosition = selection.baseOffset + emoji.length;
 
     _richTextController.value = TextEditingValue(
@@ -139,8 +145,11 @@ class _MessageInputState extends State<MessageInput> {
 
   /// 处理键盘退格键，删除整个@用户名
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
-      return _handleBackspace() ? KeyEventResult.handled : KeyEventResult.ignored;
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.backspace) {
+      return _handleBackspace()
+          ? KeyEventResult.handled
+          : KeyEventResult.ignored;
     }
     return KeyEventResult.ignored;
   }
@@ -150,7 +159,9 @@ class _MessageInputState extends State<MessageInput> {
     final text = _richTextController.text;
     final selection = _richTextController.selection;
 
-    if (!selection.isValid || !selection.isCollapsed || selection.baseOffset <= 0) {
+    if (!selection.isValid ||
+        !selection.isCollapsed ||
+        selection.baseOffset <= 0) {
       return false;
     }
 
@@ -204,7 +215,10 @@ class _MessageInputState extends State<MessageInput> {
             children: [
               Text(
                 '选择要@的用户',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -243,20 +257,29 @@ class _MessageInputState extends State<MessageInput> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(_inputBorderRadius),
-        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
+        border:
+            Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
       ),
       child: TextField(
         controller: _richTextController,
         focusNode: _focusNode,
-        onTap: () => _manageFocus(showKeyboard: true), // 点击输入框唤起输入法
+        onTap: () => _manageFocus(showKeyboard: true),
+        // 点击输入框唤起输入法
         decoration: InputDecoration(
           hintText: _hintText,
-          hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+          hintStyle: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: Colors.grey[400]),
           border: InputBorder.none,
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(color: Colors.grey[600]),
         maxLines: 1,
         textAlignVertical: TextAlignVertical.center,
         enableInteractiveSelection: true,
@@ -324,11 +347,15 @@ class _MessageInputState extends State<MessageInput> {
           ),
           child: Text(
             '发送',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: Colors.white),
           ),
         ),
       ),
-      crossFadeState: _hasText ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      crossFadeState:
+          _hasText ? CrossFadeState.showSecond : CrossFadeState.showFirst,
       duration: _animationDuration,
     );
   }
@@ -349,7 +376,8 @@ class _MessageInputState extends State<MessageInput> {
           final lastCharIndex = text.characters.length - 1;
           if (lastCharIndex < 0) return;
 
-          _richTextController.text = text.characters.take(lastCharIndex).toString();
+          _richTextController.text =
+              text.characters.take(lastCharIndex).toString();
           _richTextController.selection = TextSelection.fromPosition(
             TextPosition(offset: _richTextController.text.length),
           );

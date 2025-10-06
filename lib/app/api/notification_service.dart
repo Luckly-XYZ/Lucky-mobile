@@ -1,17 +1,20 @@
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:get/get.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_timezone/flutter_timezone.dart';
 
 /// 本地通知服务类，基于 flutter_local_notifications 插件封装
 /// 提供通知的初始化、显示、调度和取消功能，支持 Android/iOS 跨平台
 /// 使用 GetX 服务管理，确保单例使用；自动处理权限请求和时区初始化
 class LocalNotificationService extends GetxService {
-  static final LocalNotificationService _instance = LocalNotificationService._internal();
+  static final LocalNotificationService _instance =
+      LocalNotificationService._internal();
+
   factory LocalNotificationService() => _instance;
+
   LocalNotificationService._internal();
 
   late final FlutterLocalNotificationsPlugin _plugin;
@@ -36,13 +39,16 @@ class LocalNotificationService extends GetxService {
   ///
   /// 设置 Android/iOS 等平台的初始化参数；支持自定义图标和回调
   /// [onSelectNotification] 通知点击回调（可选），用于处理 payload
-  Future<void> _initializePlugin({void Function(String?)? onSelectNotification}) async {
+  Future<void> _initializePlugin(
+      {void Function(String?)? onSelectNotification}) async {
     try {
       // Android 配置：使用默认应用图标，创建高优先级通道
-      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const AndroidInitializationSettings androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
       // iOS 配置：允许前台显示警报、声音和徽章
-      const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+      const DarwinInitializationSettings iosSettings =
+          DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
         requestSoundPermission: true,
@@ -77,7 +83,9 @@ class LocalNotificationService extends GetxService {
   Future<bool> _requestPermissions() async {
     try {
       // Android 权限请求
-      final AndroidFlutterLocalNotificationsPlugin? androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final AndroidFlutterLocalNotificationsPlugin? androidImpl =
+          _plugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
       if (androidImpl != null) {
         await androidImpl.requestNotificationsPermission();
         // 可选：请求精确闹钟权限（用于精确调度）
@@ -85,13 +93,16 @@ class LocalNotificationService extends GetxService {
       }
 
       // iOS 权限请求
-      final IOSFlutterLocalNotificationsPlugin? iosImpl = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      final IOSFlutterLocalNotificationsPlugin? iosImpl =
+          _plugin.resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
       if (iosImpl != null) {
         final bool granted = await iosImpl.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        ) ?? false;
+              alert: true,
+              badge: true,
+              sound: true,
+            ) ??
+            false;
         return granted;
       }
 
@@ -132,7 +143,8 @@ class LocalNotificationService extends GetxService {
   }) async {
     try {
       // 构建通知详情
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
         channelId ?? _androidChannelId,
         _androidChannelName,
         channelDescription: _androidChannelDescription,
@@ -177,7 +189,8 @@ class LocalNotificationService extends GetxService {
     String? channelId,
   }) async {
     try {
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
         channelId ?? _androidChannelId,
         _androidChannelName,
         channelDescription: _androidChannelDescription,
@@ -199,8 +212,10 @@ class LocalNotificationService extends GetxService {
         scheduledDate,
         details,
         payload: payload,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, // 精确调度（需权限）
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        // 精确调度（需权限）
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: matchDateTimeComponents,
       );
       Get.log('✅ 通知调度成功: ID=$id, 时间=${scheduledDate.toString()}');
@@ -243,12 +258,14 @@ class LocalNotificationService extends GetxService {
   Future<bool> checkPermissions() async {
     try {
       if (Platform.isIOS) {
-        final iosImpl = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+        final iosImpl = _plugin.resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
         final options = await iosImpl?.checkPermissions();
         // 检查 alert 权限（通知可见性）
         return options?.isAlertEnabled ?? false;
       } else if (Platform.isAndroid) {
-        final androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
         return await androidImpl?.areNotificationsEnabled() ?? false;
       } else {
         // 其他平台默认启用
