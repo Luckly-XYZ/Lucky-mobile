@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_im/app/api/event_bus_service.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,6 +10,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../config/app_config.dart';
 import '../../../../constants/app_message.dart';
 import '../../../api/api_service.dart';
+import '../../../api/event_bus_service.dart';
 import '../../../controller/webrtc_controller.dart';
 
 /// 视频通话页面

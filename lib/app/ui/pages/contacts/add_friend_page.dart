@@ -19,7 +19,7 @@ class AddFriendPage extends StatelessWidget {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Get.back(),
         ),
       ),
       body: Column(

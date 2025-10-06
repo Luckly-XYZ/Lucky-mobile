@@ -20,7 +20,7 @@ class LoginPage extends GetView<LoginController> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildLogo(),
+                _buildLogo(context),
                 const SizedBox(height: 40),
                 SizedBox(
                   height: 300,
@@ -44,22 +44,20 @@ class LoginPage extends GetView<LoginController> {
     );
   }
 
-  Widget _buildLogo() {
+  Widget _buildLogo(BuildContext context) {
+    // 统一大小与圆角
+    const double avatarSize = 80;
+    const double borderRadius = 12;
+
     return Column(
       children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: const BoxDecoration(
-            color: Color(0xFF409EFF),
-            shape: BoxShape.circle,
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.chat_bubble_outline,
-              size: 40,
-              color: Colors.white,
-            ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: Image.asset(
+            'assets/logo/app_icon.png',
+            width: avatarSize,
+            height: avatarSize,
+            fit: BoxFit.cover,
           ),
         ),
         const SizedBox(height: 16),
@@ -93,8 +91,8 @@ class LoginPage extends GetView<LoginController> {
             controller.currentAuthType == AuthType.password
                 ? '验证码登录'
                 : '账号密码登录',
-            style: const TextStyle(
-              color: Color(0xFF409EFF),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -112,7 +110,7 @@ class LoginPage extends GetView<LoginController> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF409EFF).withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -137,12 +135,12 @@ class LoginPage extends GetView<LoginController> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide:
-                    const BorderSide(color: Color(0xFF409EFF), width: 1.5),
+                borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary, width: 1.5),
               ),
               prefixIcon: Icon(
                 isPasswordMode ? Icons.person_outline : Icons.phone_outlined,
-                color: const Color(0xFF409EFF),
+                color: Theme.of(context).colorScheme.primary,
                 size: 20,
               ),
               filled: true,
@@ -176,12 +174,12 @@ class LoginPage extends GetView<LoginController> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide:
-                    const BorderSide(color: Color(0xFF409EFF), width: 1.5),
+                borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary, width: 1.5),
               ),
               prefixIcon: Icon(
                 isPasswordMode ? Icons.lock_outline : Icons.security_outlined,
-                color: const Color(0xFF409EFF),
+                color: Theme.of(context).colorScheme.primary,
                 size: 20,
               ),
               filled: true,
@@ -196,7 +194,8 @@ class LoginPage extends GetView<LoginController> {
                                 ? controller.sendVerificationCode
                                 : null,
                             style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFF409EFF),
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.primary,
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8),
                               minimumSize: const Size(0, 30),
@@ -208,7 +207,7 @@ class LoginPage extends GetView<LoginController> {
                               style: TextStyle(
                                 fontSize: 13,
                                 color: controller.canSendCode.value
-                                    ? const Color(0xFF409EFF)
+                                    ? Theme.of(context).colorScheme.primary
                                     : const Color(0xFFcccccc),
                               ),
                             ),
@@ -231,7 +230,7 @@ class LoginPage extends GetView<LoginController> {
                       onChanged: (value) {
                         controller.rememberCredentials.value = value ?? false;
                       },
-                      activeColor: const Color(0xFF409EFF),
+                      activeColor: Theme.of(context).colorScheme.primary,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity:
                           const VisualDensity(horizontal: -4, vertical: -4),
@@ -261,7 +260,7 @@ class LoginPage extends GetView<LoginController> {
                       : controller.handleLogin,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: const Color(0xFF409EFF),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),

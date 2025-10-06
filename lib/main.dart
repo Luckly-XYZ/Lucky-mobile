@@ -12,6 +12,7 @@ import './routes/app_pages.dart';
 import 'app/bindings/app_bindings.dart';
 import 'app/database/app_database.dart';
 import 'config/app_config.dart';
+import 'theme/app_theme_data.dart';
 
 final getIt = GetIt.instance;
 
@@ -87,12 +88,10 @@ class MyApp extends StatelessWidget {
       ],
 
       // 主题
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-
-      // darkTheme: ThemeData.dark(), // 暗色主题
-      // themeMode: ThemeMode.system, // 跟随系统主题
+      theme: AppThemeData.lightTheme,
+      darkTheme: AppThemeData.darkTheme,
+      themeMode: ThemeMode.system,
+      // 跟随系统主题
 
       // 去除debug 标志
       debugShowCheckedModeBanner: false,

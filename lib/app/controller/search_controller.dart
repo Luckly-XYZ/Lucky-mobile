@@ -1,10 +1,10 @@
-import 'package:flutter_im/app/models/friend.dart';
 import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import 'package:get_storage/get_storage.dart';
 
 import '../api/api_service.dart';
 import '../database/app_database.dart';
+import '../models/friend.dart';
 import '../models/search_message_result.dart';
 
 class SearchsController extends GetxController {

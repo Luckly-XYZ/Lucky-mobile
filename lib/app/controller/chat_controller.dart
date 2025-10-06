@@ -1,18 +1,18 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_im/app/api/api_service.dart';
-import 'package:flutter_im/app/api/event_bus_service.dart';
-import 'package:flutter_im/app/models/friend.dart';
-import 'package:flutter_im/constants/app_message.dart';
 import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../constants/app_message.dart';
 import '../../routes/app_routes.dart';
+import '../api/api_service.dart';
+import '../api/event_bus_service.dart';
 import '../api/notification_service.dart';
 import '../database/app_database.dart';
 import '../models/chats.dart';
+import '../models/friend.dart';
 import '../models/message_receive.dart';
 import '../ui/widgets/video/video_call_snackbar.dart';
 

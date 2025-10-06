@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_im/app/models/chats.dart';
-import 'package:flutter_im/constants/app_colors.dart';
-import 'package:flutter_im/utils/date.dart';
 
+import '../../../../constants/app_colors.dart';
+import '../../../../utils/date.dart';
+import '../../../models/chats.dart';
 import 'chat_avatar.dart';
 
 /// 聊天列表项组件，显示聊天头像、名称、最新消息和时间

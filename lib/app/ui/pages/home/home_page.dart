@@ -36,7 +36,8 @@ class HomePage extends GetView<HomeController> {
       bottomNavigationBar: Obx(() => BottomNavigationBar(
             currentIndex: controller.currentIndex.value,
             onTap: controller.changeTabIndex,
-            items: _buildNavItems(chatList, controller.currentIndex.value),
+            items: _buildNavItems(
+                context, chatList, controller.currentIndex.value),
           )),
     );
   }
@@ -45,14 +46,15 @@ class HomePage extends GetView<HomeController> {
 
   /// 构建底部导航栏项
   List<BottomNavigationBarItem> _buildNavItems(
-      RxList chatList, int currentIndex) {
+      BuildContext context, RxList chatList, int currentIndex) {
     return _navItems.asMap().entries.map((entry) {
       final index = entry.key;
       final item = entry.value;
 
       // 根据当前选中的索引设置图标颜色
-      final iconColor =
-          index == currentIndex ? const Color(0xFF409EFF) : Colors.black38;
+      final iconColor = index == currentIndex
+          ? Theme.of(context).colorScheme.primary
+          : Colors.black38;
 
       // 计算未读消息数（仅对"消息"页面显示徽章）
       final unreadCount = index == 0

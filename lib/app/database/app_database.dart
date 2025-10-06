@@ -4,9 +4,9 @@
 import 'dart:async';
 
 import 'package:floor/floor.dart';
-import 'package:flutter_im/app/database/dao/friend_dao.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 
+import '../database/dao/friend_dao.dart';
 import '../models/chats.dart';
 import '../models/friend.dart';
 import '../models/group_message.dart';

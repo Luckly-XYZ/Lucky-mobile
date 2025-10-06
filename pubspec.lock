@@ -777,10 +777,10 @@ packages:
     dependency: transitive
     description:
       name: image_picker_android
-      sha256: b62d34a506e12bb965e824b6db4fbf709ee4589cf5d3e99b45ab2287b008ee0c
+      sha256: "317a5d961cec5b34e777b9252393f2afbd23084aa6e60fcf601dcf6341b9ebeb"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.8.12+20"
+    version: "0.8.12+23"
   image_picker_for_web:
     dependency: transitive
     description:
