@@ -68,6 +68,12 @@ class ApiService extends HttpService {
   // 👤 用户 / 好友相关 API
   // ====================================
 
+  /// **更新用户信息**
+  Future<Map<String, dynamic>?> updateUserInfo(
+      Map<String, dynamic> data) async {
+    return post('/service/api/v1/user/update', data: data);
+  }
+
   /// **获取好友列表**
   Future<Map<String, dynamic>?> getFriendList(Map<String, dynamic> data) {
     return get('/service/api/v1/relationship/contacts/list', params: data);
@@ -192,6 +198,11 @@ class ApiService extends HttpService {
   // ====================================
   // 📂 文件相关 API
   // ====================================
+
+  /// 图片上传
+  Future<Map<String, dynamic>?> uploadImage(FormData data) {
+    return post('/upload/api/v1/media/image', data: data);
+  }
 
   /// 文件上传
   Future<Map<String, dynamic>?> uploadFile(FormData data) {

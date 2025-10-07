@@ -29,6 +29,7 @@ class AppConfig {
   static const String audioPath = 'assets/audio/'; // 音频文件路径
   static const String notifi_title = 'Lucky';
   static const int should_display_time = 5; // 显示时间的间隔（分钟）
+  static const int cropImageTimeout = 30;
 
   // 表情文件路径
   static const String emojiPath = 'assets/data/emoji_pack.json';

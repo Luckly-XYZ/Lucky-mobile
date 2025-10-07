@@ -41,12 +41,13 @@ dependencies:
 
   # 媒体与多媒体
   camera: ^0.10.5+9 # 摄像头：拍照/录像
-  image_picker: ^1.0.7 # 图片选择：从相册/相机获取
+  image_picker: ^1.2.0 # 图片选择：从相册/相机获取
   audioplayers: ^6.1.1 # 音频播放：消息提示音
   audio_session: ^0.1.6 # 音频会话：iOS 音频配置
   video_player: ^2.8.2 # 视频播放：消息视频
   cached_network_image: ^3.3.0 # 网络图片缓存：头像/图片加载
   photo_view: ^0.14.0 # 图片查看器：缩放/平移
+  image_cropper: ^11.0.0 # 图片裁剪：头像裁剪
 
   # 通知与后台任务
   flutter_local_notifications: ^18.0.1 # 本地通知：消息提醒

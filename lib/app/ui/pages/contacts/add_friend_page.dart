@@ -5,7 +5,11 @@ import '../../../../routes/app_routes.dart';
 import '../../../controller/contact_controller.dart';
 
 class AddFriendPage extends StatelessWidget {
-  AddFriendPage({Key? key}) : super(key: key);
+  AddFriendPage({Key? key}) : super(key: key) {
+    final ContactController controller = Get.find<ContactController>();
+    controller.searchResults.clear();
+    controller.isSearching.value = false;
+  }
 
   final TextEditingController _searchController = TextEditingController();
   final ContactController controller = Get.find<ContactController>();
@@ -143,7 +147,11 @@ class AddFriendPage extends StatelessWidget {
           // ),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundImage: NetworkImage(user.avatar ?? ""),
+              backgroundImage:
+                  _isValidUrl(user.avatar) ? NetworkImage(user.avatar!) : null,
+              child: _isValidUrl(user.avatar)
+                  ? null
+                  : Icon(Icons.person, color: Colors.white),
             ),
             title: Text(user.name ?? "",
                 style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -151,11 +159,22 @@ class AddFriendPage extends StatelessWidget {
             onTap: () {
               // TODO: 可添加查看详情逻辑
               Get.toNamed("${Routes.HOME}${Routes.FRIEND_PROFILE}",
-                  arguments: {'userId': user.userId});
+                  arguments: {'userId': user.friendId});
             },
           ),
         );
       },
     );
+  }
+
+  /// 检查URL是否有效
+  bool _isValidUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    try {
+      final Uri uri = Uri.parse(url);
+      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
+    } catch (e) {
+      return false;
+    }
   }
 }

@@ -91,7 +91,6 @@ class MyApp extends StatelessWidget {
       theme: AppThemeData.lightTheme,
       darkTheme: AppThemeData.darkTheme,
       themeMode: ThemeMode.system,
-      // 跟随系统主题
 
       // 去除debug 标志
       debugShowCheckedModeBanner: false,

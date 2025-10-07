@@ -51,6 +51,9 @@ abstract class Routes {
   /// 好友信息
   static var FRIEND_PROFILE = '/friend_profile';
 
+  /// 用户资料
+  static var USER_PROFILE = '/user_profile';
+
   /// 视频通话
   static var VIDEO_CALL = '/video_call';
 }

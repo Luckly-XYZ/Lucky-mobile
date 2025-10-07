@@ -1,10 +1,12 @@
 import 'package:floor/floor.dart';
 
-@Entity(tableName: 'friend', indices: [
+@Entity(tableName: 'friend', primaryKeys: [
+  'userId',
+  'friendId'
+], indices: [
   Index(value: ['userId', 'friendId', 'name'])
 ])
 class Friend {
-  @primaryKey
   String? userId;
   String? friendId;
   String? name;
@@ -14,7 +16,7 @@ class Friend {
   String? location;
   int? black; // 是否拉黑 1正常 2拉黑
   int? flag;
-  String? birthDay;
+  String? birthday;
   String? selfSignature;
   int? sequence;
 
@@ -28,7 +30,7 @@ class Friend {
     this.location,
     this.black,
     this.flag,
-    this.birthDay,
+    this.birthday,
     this.selfSignature,
     this.sequence,
   });
@@ -43,7 +45,7 @@ class Friend {
     location = json['location'];
     black = json['black'];
     flag = json['flag'];
-    birthDay = json['birthDay'];
+    birthday = json['birthday'];
     selfSignature = json['selfSignature'];
     sequence = json['sequence'];
   }
@@ -59,7 +61,7 @@ class Friend {
     data['location'] = location;
     data['black'] = black;
     data['flag'] = flag;
-    data['birthDay'] = birthDay;
+    data['birthday'] = birthday;
     data['selfSignature'] = selfSignature;
     data['sequence'] = sequence;
     return data;

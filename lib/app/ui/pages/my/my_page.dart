@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../constants/app_sizes.dart';
 import '../../../../routes/app_routes.dart';
 import '../../../controller/user_controller.dart';
+import '../../widgets/icon/icon_font.dart';
 
 /// 个人中心页面，展示用户信息和功能入口
 /// 特性：
@@ -33,18 +34,19 @@ class MyPage extends StatelessWidget {
   };
 
   /// 列表项数据
-  static const _listItems = [
-    _ListItemData(
-      icon: Icons.qr_code_scanner,
+  static final _listItems = [
+
+    const _ListItemData(
+      icon: Iconfont.search,
       title: '扫一扫',
       route: '${Routes.HOME}${Routes.SCAN}',
     ),
-    _ListItemData(
-      icon: Icons.settings,
+    const _ListItemData(
+      icon: Iconfont.setting,
       title: '设置',
       route: null, // TODO: 实现设置页面路由
     ),
-    _ListItemData(
+    const _ListItemData(
       icon: Icons.exit_to_app,
       title: '退出登录',
       action: _logout,
@@ -132,20 +134,24 @@ class MyPage extends StatelessWidget {
 
               /// 用户名和个性签名
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(username, style: _usernameStyle),
-                        const SizedBox(width: 5),
-                        if (_genderIcons.containsKey(gender))
-                          _genderIcons[gender]!,
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(signature, style: _signatureStyle),
-                  ],
+                child: GestureDetector(
+                  onTap: () =>
+                      Get.toNamed('${Routes.HOME}${Routes.USER_PROFILE}'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(username, style: _usernameStyle),
+                          const SizedBox(width: 5),
+                          if (_genderIcons.containsKey(gender))
+                            _genderIcons[gender]!,
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(signature, style: _signatureStyle),
+                    ],
+                  ),
                 ),
               ),
 

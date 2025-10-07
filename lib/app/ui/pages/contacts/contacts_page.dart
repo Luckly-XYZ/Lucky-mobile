@@ -11,7 +11,10 @@ class ContactsPage extends GetView<ContactController> {
 
   @override
   Widget build(BuildContext context) {
+    // 更新通讯录
     controller.fetchContacts();
+    // 更新未处理请求
+    controller.fetchFriendRequests();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

@@ -110,10 +110,10 @@ class ChatController extends GetxController {
       await _db.groupMessageDao
           .insertMessage(IMessage.toGroupMessage(dto, userId.value));
     }
-    if (dto.fromId != userId.value && currentChat.value?.toId != dto.fromId) {
-      _localNotificationService.showNotification(
-          id: 999, title: chat.name, body: dto.getMessageBodyText());
-    }
+    // if (dto.fromId != userId.value && currentChat.value?.toId != dto.fromId) {
+    //   _localNotificationService.showNotification(
+    //       id: 999, title: chat.name, body: dto.getMessageBodyText());
+    // }
     if (currentChat.value?.id == chat.id) {
       messageList.add(dto);
       messageList

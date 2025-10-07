@@ -24,6 +24,7 @@ class Iconfont {
   static const IconData add = IconData(0xe608, fontFamily: _fontFamily);
   static const IconData scan = IconData(0xe749, fontFamily: _fontFamily);
   static const IconData search = IconData(0xe699, fontFamily: _fontFamily);
+  static const IconData setting = IconData(0xe60c, fontFamily: _fontFamily);
   static const IconData contacts = IconData(0xe607, fontFamily: _fontFamily);
 
   // 获取文件图标

@@ -48,6 +48,10 @@ class FriendProfilePage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: Get.back, // 使用 Get.back 替代 Navigator.pop
         ),
+        actions: [
+          if (userId != friendId) // 不显示自己的更多选项
+            _buildPopupMenuButton(context, userId, friendId),
+        ],
       ),
       body: FutureBuilder<Friend>(
         future: _getFriendInfo(userId, friendId),
@@ -83,6 +87,30 @@ class FriendProfilePage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  /// 构建弹出菜单按钮
+  Widget _buildPopupMenuButton(
+      BuildContext context, String userId, String friendId) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (String value) async {
+        switch (value) {
+          case 'delete':
+            _handleDeleteFriend(context, userId, friendId);
+            break;
+        }
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: ListTile(
+            leading: Icon(Icons.delete, color: Colors.red),
+            title: Text('删除好友', style: TextStyle(color: Colors.red)),
+          ),
+        ),
+      ],
     );
   }
 
@@ -304,6 +332,13 @@ class FriendProfilePage extends StatelessWidget {
     } catch (e) {
       Get.snackbar('错误', '添加好友失败: $e');
     }
+  }
+
+  /// 处理删除好友
+  Future<void> _handleDeleteFriend(
+      BuildContext context, String userId, String friendId) async {
+    final contactController = Get.find<ContactController>();
+    await contactController.deleteFriend(friendId);
   }
 }
 

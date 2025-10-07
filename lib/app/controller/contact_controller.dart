@@ -45,15 +45,30 @@ class ContactController extends GetxController {
   Future<void> fetchContacts() async {
     try {
       isLoading.value = true;
+
+      // 先查询本地最大的 sequence
+      final localMaxSequence = await _db.friendDao.getMaxSequence(userId.value);
+
       final response = await _apiService.getFriendList({
         'userId': userId.value,
-        'sequence': '0',
+        'sequence': localMaxSequence ?? 0,
       });
-      _handleApiResponse(response, onSuccess: (data) {
-        contactsList.value = (data as List<dynamic>)
+
+      _handleApiResponse(response, onSuccess: (data) async {
+        final list = (data as List<dynamic>)
             .map((friend) => Friend.fromJson(friend))
             .toList();
+
+        // 保存好友列表到本地数据库
+        for (var friend in list) {
+          await _db.friendDao.insertOrUpdate(friend);
+        }
+
+        contactsList.value = (await _db.friendDao.list(userId.value))! ?? [];
       }, errorMessage: '获取好友列表失败');
+    } catch (e) {
+      _showError('获取好友列表失败: $e');
+      contactsList.value = [];
     } finally {
       isLoading.value = false;
     }
@@ -66,10 +81,11 @@ class ContactController extends GetxController {
         'fromId': userId.value,
         'toId': friendId,
       });
-      _handleApiResponse(response, onSuccess: (_) {
+      _handleApiResponse(response, onSuccess: (_) async {
         Get.snackbar('成功', '已删除好友');
         fetchContacts(); // 刷新好友列表
       }, errorMessage: '删除好友失败');
+      await _db.friendDao.deleteFriend(userId.value, friendId);
     } catch (e) {
       _showError('删除好友失败: $e');
     }

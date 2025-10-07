@@ -104,7 +104,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `chats` (`chatId` TEXT NOT NULL, `id` TEXT NOT NULL, `chatType` INTEGER NOT NULL, `ownerId` TEXT NOT NULL, `toId` TEXT NOT NULL, `isMute` INTEGER NOT NULL, `isTop` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `name` TEXT NOT NULL, `avatar` TEXT NOT NULL, `unread` INTEGER NOT NULL, `message` TEXT, `messageTime` INTEGER NOT NULL, PRIMARY KEY (`chatId`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `friend` (`userId` TEXT, `friendId` TEXT, `name` TEXT, `alias` TEXT, `avatar` TEXT, `gender` INTEGER, `location` TEXT, `black` INTEGER, `flag` INTEGER, `birthDay` TEXT, `selfSignature` TEXT, `sequence` INTEGER, PRIMARY KEY (`userId`))');
+            'CREATE TABLE IF NOT EXISTS `friend` (`userId` TEXT, `friendId` TEXT, `name` TEXT, `alias` TEXT, `avatar` TEXT, `gender` INTEGER, `location` TEXT, `black` INTEGER, `flag` INTEGER, `birthday` TEXT, `selfSignature` TEXT, `sequence` INTEGER, PRIMARY KEY (`userId`, `friendId`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `group_message` (`messageId` TEXT NOT NULL, `fromId` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `groupId` TEXT NOT NULL, `messageBody` TEXT NOT NULL, `messageContentType` INTEGER NOT NULL, `messageTime` INTEGER NOT NULL, `messageType` INTEGER NOT NULL, `readStatus` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `extra` TEXT, PRIMARY KEY (`messageId`))');
         await database.execute(
@@ -290,14 +290,14 @@ class _$FriendDao extends FriendDao {
                   'location': item.location,
                   'black': item.black,
                   'flag': item.flag,
-                  'birthDay': item.birthDay,
+                  'birthday': item.birthday,
                   'selfSignature': item.selfSignature,
                   'sequence': item.sequence
                 }),
         _friendUpdateAdapter = UpdateAdapter(
             database,
             'friend',
-            ['userId'],
+            ['userId', 'friendId'],
             (Friend item) => <String, Object?>{
                   'userId': item.userId,
                   'friendId': item.friendId,
@@ -308,7 +308,7 @@ class _$FriendDao extends FriendDao {
                   'location': item.location,
                   'black': item.black,
                   'flag': item.flag,
-                  'birthDay': item.birthDay,
+                  'birthday': item.birthday,
                   'selfSignature': item.selfSignature,
                   'sequence': item.sequence
                 });
@@ -324,8 +324,12 @@ class _$FriendDao extends FriendDao {
   final UpdateAdapter<Friend> _friendUpdateAdapter;
 
   @override
-  Future<Friend?> getFriendById(String userId) async {
-    return _queryAdapter.query('SELECT * FROM Friend WHERE user_id =?1',
+  Future<Friend?> getFriendById(
+    String userId,
+    String friendId,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT * FROM Friend WHERE userId=?1 AND friendId =?2',
         mapper: (Map<String, Object?> row) => Friend(
             userId: row['userId'] as String?,
             friendId: row['friendId'] as String?,
@@ -336,21 +340,52 @@ class _$FriendDao extends FriendDao {
             location: row['location'] as String?,
             black: row['black'] as int?,
             flag: row['flag'] as int?,
-            birthDay: row['birthDay'] as String?,
+            birthday: row['birthday'] as String?,
+            selfSignature: row['selfSignature'] as String?,
+            sequence: row['sequence'] as int?),
+        arguments: [userId, friendId]);
+  }
+
+  @override
+  Future<List<Friend>?> list(String userId) async {
+    return _queryAdapter.queryList('SELECT * FROM Friend WHERE userId=?1',
+        mapper: (Map<String, Object?> row) => Friend(
+            userId: row['userId'] as String?,
+            friendId: row['friendId'] as String?,
+            name: row['name'] as String?,
+            alias: row['alias'] as String?,
+            avatar: row['avatar'] as String?,
+            gender: row['gender'] as int?,
+            location: row['location'] as String?,
+            black: row['black'] as int?,
+            flag: row['flag'] as int?,
+            birthday: row['birthday'] as String?,
             selfSignature: row['selfSignature'] as String?,
             sequence: row['sequence'] as int?),
         arguments: [userId]);
   }
 
   @override
-  Future<void> deleteFriend(String userId) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Friend WHERE user_id =?1',
+  Future<void> deleteFriend(
+    String userId,
+    String friendId,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM Friend WHERE userId =?1 AND friendId =?2',
+        arguments: [userId, friendId]);
+  }
+
+  @override
+  Future<int?> getMaxSequence(String userId) async {
+    return _queryAdapter.query(
+        'SELECT IFNULL(MAX(sequence), 0) FROM Friend WHERE userId = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [userId]);
   }
 
   @override
   Future<void> insertFriend(Friend friend) async {
-    await _friendInsertionAdapter.insert(friend, OnConflictStrategy.abort);
+    await _friendInsertionAdapter.insert(friend, OnConflictStrategy.fail);
   }
 
   @override

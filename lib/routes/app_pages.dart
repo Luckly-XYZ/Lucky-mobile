@@ -11,6 +11,7 @@ import '../app/ui/pages/message/message_page.dart';
 import '../app/ui/pages/my/my_qr_code_page.dart';
 import '../app/ui/pages/scan/scan_page.dart';
 import '../app/ui/pages/search/search_page.dart';
+import '../app/ui/pages/my/user_profile_page.dart';
 import '../app/ui/pages/unknow/unknown_page.dart';
 import '../app/ui/pages/video/video_call_page.dart';
 import '../app/ui/pages/webview/webview_page.dart';
@@ -139,6 +140,14 @@ class AppPages {
     GetPage(
       name: Routes.SEARCH,
       page: () => const SearchPage(),
+      transitionDuration: _defaultTransitionDuration,
+      curve: _defaultCurve,
+    ),
+
+    /// 用户资料页面
+    GetPage(
+      name: Routes.USER_PROFILE,
+      page: () => const UserProfilePage(),
       transitionDuration: _defaultTransitionDuration,
       curve: _defaultCurve,
     ),

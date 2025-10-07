@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -11,6 +13,7 @@ import '../../utils/objects.dart';
 import '../../utils/rsa.dart';
 import '../api/api_service.dart';
 import '../api/websocket_service.dart';
+import '../models/User.dart';
 import '../models/message_receive.dart';
 import 'chat_controller.dart';
 
@@ -46,6 +49,8 @@ class UserController extends GetxController with WidgetsBindingObserver {
   bool _reconnectLock = false;
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
+
+  final RxBool isEditing = false.obs;
 
   // --- 生命周期管理 ---
 
@@ -411,6 +416,49 @@ class UserController extends GetxController with WidgetsBindingObserver {
       _logError('获取公钥失败: $e\n$st');
     } finally {
       _gettingPublicKey = false;
+    }
+  }
+
+  Future<String?> uploadImage(File? img) async {
+    try {
+      if (img == null) {
+        Get.log('图片为空');
+        return null;
+      }
+
+      Get.log('图片大小: ${img.lengthSync()}');
+
+      Get.log('图片格式: ${img.path.split('.').last}');
+
+      Get.log('图片路径: ${img.path}');
+
+      Get.log('图片名称: ${img.path.split('/').last}');
+
+      // 使用 dio 的 FormData
+      final formData = dio.FormData.fromMap({
+        "file": await dio.MultipartFile.fromFile(img.path,
+            filename: img.path.split('/').last),
+      });
+
+      final response = await _apiService.uploadImage(formData);
+      return response?['path'] as String?;
+    } catch (e, st) {
+      _logError('上传图片失败: $e\n$st');
+      rethrow;
+    }
+  }
+
+  Future<void> updateUserInfo(User user) async {
+    try {
+      final response = await _apiService.updateUserInfo(user.toJson());
+      _handleApiResponse(response, onSuccess: (data) {
+        Get.log('✅ 更新用户信息成功');
+        getUserInfo();
+        Get.snackbar('成功', '资料已更新', snackPosition: SnackPosition.TOP);
+      }, errorMessage: '更新用户信息失败');
+    } catch (e, st) {
+      _logError('更新用户信息失败: $e\n$st');
+      rethrow;
     }
   }
 

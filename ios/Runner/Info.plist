@@ -61,5 +61,8 @@
     <string>请求通知权限</string>
     <key>NSUserNotificationAlertBody</key>
     <string>我们希望能够在您允许的情况下发送通知。</string>
+    <key>Localization native development region</key>
+    <string>zh_CN</string>
+
 </dict>
 </plist>
