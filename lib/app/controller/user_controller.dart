@@ -16,13 +16,16 @@ import '../api/websocket_service.dart';
 import '../models/User.dart';
 import '../models/message_receive.dart';
 import 'chat_controller.dart';
+import 'contact_controller.dart';
 
-/// 用户控制器，管理用户认证、WebSocket 连接和用户信息
+/// 用户控制器：管理用户认证、存储、WebSocket 连接、以及与聊天/联系人控制器的联动
+/// - 保持现有逻辑不变，只对代码按用途分区并加入关键中文注释，增强可读性
 class UserController extends GetxController with WidgetsBindingObserver {
+
   // 单例访问
   static UserController get to => Get.find();
 
-  // 常量定义
+  // ---------- 常量定义（配置/固定值） ----------
   static const _keyUserId = 'userId';
   static const _keyToken = 'token';
   static const _successCode = 200;
@@ -30,38 +33,43 @@ class UserController extends GetxController with WidgetsBindingObserver {
   static const _reconnectBaseDelay = Duration(seconds: 2);
   static const _maxReconnectAttempts = 6;
 
-  // 依赖注入
+  // ---------- 依赖注入（外部服务/控制器） ----------
+  // 这些依赖通过 Get.find 注入，注意不要在 Binding 时触发循环依赖
   final _storage = GetStorage();
   final _secureStorage = const FlutterSecureStorage();
   final _apiService = Get.find<ApiService>();
   final _wsService = Get.find<WebSocketService>();
-  final _chatController = Get.find<ChatController>();
+  late final ChatController _chatController;
+  late final ContactController _contactController;
 
-  // 响应式状态
-  final RxString userId = ''.obs; // 用户ID
-  final RxString token = ''.obs; // 认证令牌
+  // ---------- 响应式状态（用于界面/其他模块监听） ----------
+  final RxString userId = ''.obs; // 用户 ID（持久化到 GetStorage）
+  final RxString token = ''.obs; // 认证令牌（持久化到 FlutterSecureStorage）
   final RxMap<String, dynamic> userInfo = <String, dynamic>{}.obs; // 用户信息
 
-  // 非响应式字段
-  String publicKey = ''; // RSA 公钥
-  bool _gettingPublicKey = false;
-  bool _connecting = false;
-  bool _reconnectLock = false;
-  int _reconnectAttempts = 0;
-  Timer? _reconnectTimer;
+  // ---------- 非响应式字段（内部状态、计时器等） ----------
+  String publicKey = ''; // RSA 公钥（用于登录加密）
+  bool _gettingPublicKey = false; // 获取公钥的标志位，防止重复请求
+  bool _connecting = false; // websocket 连接中标志
+  bool _reconnectLock = false; // 重连锁
+  int _reconnectAttempts = 0; // 重连尝试次数（用于指数退避）
+  Timer? _reconnectTimer; // 重连定时器
 
-  final RxBool isEditing = false.obs;
+  final RxBool isEditing = false.obs; // 额外状态示例，供界面使用
 
-  // --- 生命周期管理 ---
-
+  // ---------- 生命周期（onInit/onClose 等） ----------
   @override
   void onInit() {
     super.onInit();
 
-    // 初始化：先加载本地存储，再设置监听器
+    // 启动时加载本地持久化数据，并设置响应式监听器
     _loadStoredData();
     _setupListeners();
 
+    _chatController = Get.find<ChatController>();
+    _contactController = Get.find<ContactController>();
+
+    // 观察应用生命周期（前后台切换）
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -74,16 +82,19 @@ class UserController extends GetxController with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 根据应用生命周期采取相应操作（如断开/重连 websocket、清理当前会话等）
     switch (state) {
       case AppLifecycleState.inactive:
         Get.log('📌 应用进入非活动状态');
         break;
       case AppLifecycleState.paused:
         Get.log('⏸️ 应用进入后台');
+        // 进入后台时清理当前会话（以避免后台占用资源）
         _chatController.currentChat.value = null;
         break;
       case AppLifecycleState.resumed:
         Get.log('✅ 应用恢复到前台');
+        // 恢复时尝试重连 websocket
         reconnectWebSocket();
         break;
       case AppLifecycleState.detached:
@@ -95,80 +106,14 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // --- 数据持久化 ---
 
-  Future<void> _loadStoredData() async {
-    try {
-      final storedToken = await _secureStorage.read(key: _keyToken);
-      final storedUserId = _storage.read(_keyUserId);
 
-      if (storedToken != null && storedToken.isNotEmpty)
-        token.value = storedToken;
-      if (storedUserId != null && storedUserId.toString().isNotEmpty) {
-        userId.value = storedUserId.toString();
-      }
-    } catch (e, st) {
-      _logError('加载存储数据失败: $e\n$st');
-    }
-  }
+  // ====================== 认证（登录/登出） ======================
 
-  void _saveUserId() {
-    try {
-      if (userId.value.isEmpty) {
-        _storage.remove(_keyUserId);
-      } else {
-        _storage.write(_keyUserId, userId.value);
-      }
-    } catch (e) {
-      _logError('保存 userId 失败: $e');
-    }
-  }
-
-  Future<void> _saveToken() async {
-    try {
-      if (token.value.isEmpty) {
-        await _secureStorage.delete(key: _keyToken);
-      } else {
-        await _secureStorage.write(key: _keyToken, value: token.value);
-      }
-    } catch (e) {
-      _logError('保存令牌失败: $e');
-    }
-  }
-
-  void _setupListeners() {
-    // 当 token 变化时，既保存也检查认证状态
-    ever(token, (_) {
-      _onTokenChanged();
-    });
-
-    // 保存 userId
-    ever(userId, (_) => _saveUserId());
-  }
-
-  Future<void> _onTokenChanged() async {
-    try {
-      await _saveToken();
-      _checkAuth();
-    } catch (e) {
-      _logError('处理 token 变更失败: $e');
-    }
-  }
-
-  // --- 认证管理 ---
-
-  void _checkAuth() {
-    if (token.value.isEmpty) {
-      Get.log('用户未认证');
-    } else {
-      Get.log('用户已认证');
-    }
-  }
-
-  /// 用户登录
+  /// 用户登录（加密密码并调用 API），成功后会触发 startConnect()
   Future<bool> login(String username, String password, String authType) async {
     try {
-      await logout(); // 清除现有认证状态
+      await logout(); // 先清理旧状态
       await _ensurePublicKey();
 
       final encryptedPassword = await RSAService.encrypt(password, publicKey);
@@ -197,6 +142,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 登出：关闭 websocket，清除本地认证信息与内存状态
   Future<void> logout() async {
     try {
       _wsService.closeSocket();
@@ -210,14 +156,25 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 登录成功后启动的一系列初始化流程（按顺序更新用户数据与连接）
   Future<void> startConnect() async {
+    // 获取用户信息
+    await getUserInfo();
+    // 连接 WebSocket
     connectWebSocket();
-    await _chatController.loadChats(userId.value);
-    _chatController.syncChatsAndMessages();
+    // 更新通讯录
+    await _contactController.fetchContacts();
+    // 更新未处理请求
+    await _contactController.fetchFriendRequests();
+    // 获取会话列表
+    await _chatController.fetchChats();
+    // 获取消息（会读取本地或远端）
+    _chatController.fetchMessages();
   }
 
-  // --- WebSocket 管理 ---
+  // ====================== WebSocket 管理 ======================
 
+  /// 建立 websocket 连接（ok 时会 register）
   void connectWebSocket() {
     if (token.value.isEmpty || userId.value.isEmpty) return;
 
@@ -256,6 +213,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 重连逻辑：采用指数退避并且使用锁避免重复重连
   Future<void> reconnectWebSocket() async {
     if (_reconnectLock) {
       Get.log('重连已在排队/进行中，跳过重复请求');
@@ -266,7 +224,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     // 取消已有定时器（如果存在）
     _reconnectTimer?.cancel();
 
-    // 指数退避
+    // 指数退避（2s, 4s, 8s, ...，受 _maxReconnectAttempts 限制）
     final attempts = _reconnectAttempts.clamp(0, _maxReconnectAttempts);
     final delay = _reconnectBaseDelay * (1 << attempts); // 2s,4s,8s...
     _reconnectAttempts++;
@@ -277,7 +235,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     _reconnectTimer = Timer(delay, () async {
       try {
         connectWebSocket();
-        await _chatController.syncChatsAndMessages();
+        await _chatController.fetchMessages();
       } catch (e, st) {
         _logError('重连尝试失败: $e\n$st');
       } finally {
@@ -287,6 +245,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     });
   }
 
+  /// WebSocket 原始消息处理器（入口）
   void _handleWebSocketMessage(dynamic rawData) {
     try {
       final message = _safeDecodeJson(rawData);
@@ -320,7 +279,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // 处理单聊/群聊消息，抽成方法便于单测
+  /// 处理普通的单聊/群聊消息（解包 -> 更新会话 -> 日志）
   void _processChatMessage(dynamic data) {
     try {
       if (data == null) {
@@ -342,6 +301,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 处理视频通话类消息
   void _processVideoMessage(dynamic data) {
     try {
       if (data == null) {
@@ -356,7 +316,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // 从 IMessage 推断聊天 id（single -> 对端 id，group -> groupId）
+  /// 从 IMessage 推断 chatId（single => 对端 id，group => groupId）
   String? _deriveChatIdFromMessage(IMessage parsedMessage) {
     try {
       if (parsedMessage.messageType == IMessageType.singleMessage.code) {
@@ -377,8 +337,9 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // --- API 调用 ---
+  // ====================== 与后端 API 交互的方法 ======================
 
+  /// 发送短信验证码（示例）
   Future<void> sendVerificationCode(String phone) async {
     try {
       final response = await _apiService.sendSms({'phone': phone});
@@ -389,6 +350,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 获取公钥：包含重复请求保护（_gettingPublicKey）
   Future<void> _ensurePublicKey() async {
     if (publicKey.isNotEmpty) return;
     if (_gettingPublicKey) {
@@ -403,6 +365,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     await getPublicKey();
   }
 
+  /// 请求公钥接口（设置 publicKey）
   Future<void> getPublicKey() async {
     if (_gettingPublicKey) return;
     _gettingPublicKey = true;
@@ -419,6 +382,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 上传图片（使用 dio 的 FormData）
   Future<String?> uploadImage(File? img) async {
     try {
       if (img == null) {
@@ -427,11 +391,8 @@ class UserController extends GetxController with WidgetsBindingObserver {
       }
 
       Get.log('图片大小: ${img.lengthSync()}');
-
       Get.log('图片格式: ${img.path.split('.').last}');
-
       Get.log('图片路径: ${img.path}');
-
       Get.log('图片名称: ${img.path.split('/').last}');
 
       // 使用 dio 的 FormData
@@ -448,6 +409,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 更新用户信息并刷新本地 userInfo
   Future<void> updateUserInfo(User user) async {
     try {
       final response = await _apiService.updateUserInfo(user.toJson());
@@ -462,6 +424,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 获取用户信息并写入 userInfo（调用方可观察 userInfo 变更）
   Future<void> getUserInfo() async {
     try {
       final response = await _apiService.getUserInfo({'userId': userId.value});
@@ -475,6 +438,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// 扫描二维码并判断是否授权
   Future<bool> scanQrCode(String qrCodeContent) async {
     try {
       final response = await _apiService.scanQRCode({
@@ -490,13 +454,87 @@ class UserController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // --- 辅助方法 ---
+  // ====================== 数据持久化相关方法 ======================
 
+  /// 从本地存储加载 token 与 userId （启动时调用）
+  Future<void> _loadStoredData() async {
+    try {
+      final storedToken = await _secureStorage.read(key: _keyToken);
+      final storedUserId = _storage.read(_keyUserId);
+
+      if (storedToken != null && storedToken.isNotEmpty) token.value = storedToken;
+      if (storedUserId != null && storedUserId.toString().isNotEmpty) {
+        userId.value = storedUserId.toString();
+      }
+    } catch (e, st) {
+      _logError('加载存储数据失败: $e\n$st');
+    }
+  }
+
+  /// 保存 userId 到本地（同步方法）
+  void _saveUserId() {
+    try {
+      if (userId.value.isEmpty) {
+        _storage.remove(_keyUserId);
+      } else {
+        _storage.write(_keyUserId, userId.value);
+      }
+    } catch (e) {
+      _logError('保存 userId 失败: $e');
+    }
+  }
+
+  /// 保存 token 到安全存储（异步）
+  Future<void> _saveToken() async {
+    try {
+      if (token.value.isEmpty) {
+        await _secureStorage.delete(key: _keyToken);
+      } else {
+        await _secureStorage.write(key: _keyToken, value: token.value);
+      }
+    } catch (e) {
+      _logError('保存令牌失败: $e');
+    }
+  }
+
+  /// 设置响应式监听器：token 变更触发保存与鉴权检查；userId 变更触发保存
+  void _setupListeners() {
+    // 当 token 变化时，既保存也检查认证状态
+    ever(token, (_) {
+      _onTokenChanged();
+    });
+
+    // 保存 userId
+    ever(userId, (_) => _saveUserId());
+  }
+
+  /// token 变更的处理器：保存并检测认证
+  Future<void> _onTokenChanged() async {
+    try {
+      await _saveToken();
+      _checkAuth();
+    } catch (e) {
+      _logError('处理 token 变更失败: $e');
+    }
+  }
+
+  /// 简单检查认证状态（可扩展为主动验证 token）
+  void _checkAuth() {
+    if (token.value.isEmpty) {
+      Get.log('用户未认证');
+    } else {
+      Get.log('用户已认证');
+    }
+  }
+
+  // ====================== 辅助方法（通用工具/解析/日志） ======================
+
+  /// 统一处理 API 返回值（成功调用 onSuccess，否则抛异常）
   T _handleApiResponse<T>(
-    Map<String, dynamic>? response, {
-    required T Function(dynamic) onSuccess,
-    required String errorMessage,
-  }) {
+      Map<String, dynamic>? response, {
+        required T Function(dynamic) onSuccess,
+        required String errorMessage,
+      }) {
     if (response != null && response['code'] == _successCode) {
       return onSuccess(response['data']);
     }
@@ -504,6 +542,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     throw Exception(msg);
   }
 
+  /// 安全解析 JSON（支持 raw String / Map / 其它），解析失败返回 null
   Map<String, dynamic>? _safeDecodeJson(dynamic raw) {
     try {
       if (raw is String && raw.isNotEmpty) {
@@ -522,6 +561,7 @@ class UserController extends GetxController with WidgetsBindingObserver {
     return null;
   }
 
+  /// 统一记录错误日志（目前简单输出到 Get.log，后续可扩展到上报）
   void _logError(String message) {
     Get.log(message);
   }

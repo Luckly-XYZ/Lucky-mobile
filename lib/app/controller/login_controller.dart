@@ -208,7 +208,6 @@ class LoginController extends GetxController
   /// 跳转到主页
   Future<void> _navigateToHome() async {
     try {
-      await _userController.getUserInfo();
       Get.offNamed(Routes.HOME);
     } catch (e) {
       _showError('获取用户信息失败，请重新登录');

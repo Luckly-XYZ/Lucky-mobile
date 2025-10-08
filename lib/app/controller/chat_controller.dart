@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
-
+import 'package:get_storage/get_storage.dart';
 import '../../constants/app_message.dart';
 import '../../routes/app_routes.dart';
 import '../api/api_service.dart';
@@ -40,6 +40,11 @@ class ChatController extends GetxController {
   late final ApiService _apiService;
   late final LocalNotificationService _localNotificationService;
 
+  final _storage = GetStorage();
+
+  // 常量定义
+  static const String _keyUserId = 'userId';
+
   // 当前用户ID
   final userId = ''.obs;
 
@@ -54,6 +59,13 @@ class ChatController extends GetxController {
     super.onInit();
     _apiService = Get.find<ApiService>();
     _localNotificationService = Get.find<LocalNotificationService>();
+  }
+
+  getUserId()  {
+    final storedUserId = _storage.read(_keyUserId);
+    if (storedUserId != null) {
+      userId.value = storedUserId;
+    }
   }
 
   /// 创建或更新会话
@@ -129,14 +141,16 @@ class ChatController extends GetxController {
   }
 
   /// 初始化会话列表
-  Future<void> loadChats(String ownerId) async {
+  Future<void> fetchChats() async {
+
+    if(userId.isEmpty){
+      getUserId();
+    }
+
     try {
       isLoading.value = true;
-      if (userId.isEmpty || userId.value != ownerId) {
-        userId.value = ownerId;
-      }
       chatList.clear();
-      final chats = await _db.chatsDao.getAllChats(ownerId);
+      final chats = await _db.chatsDao.getAllChats(userId.value);
       if (chats?.isNotEmpty ?? false) {
         chatList.addAll(chats as Iterable<Chats>);
         _sortChatList();
@@ -198,7 +212,7 @@ class ChatController extends GetxController {
     } catch (e) {
       errorMessage.value = '删除聊天失败: $e';
     } finally {
-      await loadChats(userId.value);
+      await fetchChats();
     }
   }
 
@@ -340,7 +354,12 @@ class ChatController extends GetxController {
   }
 
   /// 同步会话和消息
-  Future<void> syncChatsAndMessages() async {
+  Future<void> fetchMessages() async {
+
+    if(userId.isEmpty){
+      getUserId();
+    }
+
     try {
       final lastMessageTime = await _getLastMessageTimestamp();
       final response = await _apiService.getMessageList({

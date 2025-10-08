@@ -18,10 +18,13 @@ class AppAllBinding extends Bindings {
     Get.put(ApiService()); // ✅ 这里注入 HttpService
     Get.put(WebSocketService()); // ✅ 注入 websocket
     Get.put(LocalNotificationService());
+
+    Get.put(ContactController(), permanent: true);
+
     Get.put(ChatController(), permanent: true);
     Get.put(UserController(), permanent: true);
     Get.put(HomeController(), permanent: true);
-    Get.put(ContactController(), permanent: true);
+
     Get.put(SearchsController());
     Get.put(LoginController());
   }

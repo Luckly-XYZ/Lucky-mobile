@@ -1,3 +1,4 @@
+import 'package:flutter_im/utils/objects.dart';
 import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import 'package:get_storage/get_storage.dart';
@@ -41,10 +42,21 @@ class ContactController extends GetxController {
 
   // --- 好友列表管理 ---
 
+  getUserId()  {
+    final storedUserId = _storage.read(_keyUserId);
+    if (storedUserId != null) {
+      userId.value = storedUserId;
+    }
+  }
+
   /// 获取好友列表
   Future<void> fetchContacts() async {
     try {
       isLoading.value = true;
+
+      if(userId.isEmpty){
+        getUserId();
+      }
 
       // 先查询本地最大的 sequence
       final localMaxSequence = await _db.friendDao.getMaxSequence(userId.value);
@@ -82,10 +94,12 @@ class ContactController extends GetxController {
         'toId': friendId,
       });
       _handleApiResponse(response, onSuccess: (_) async {
+        if(Objects.isNotBlank(userId.value) && Objects.isNotBlank(friendId)){
+          await _db.friendDao.deleteFriend(userId.value, friendId);
+        }
         Get.snackbar('成功', '已删除好友');
         fetchContacts(); // 刷新好友列表
       }, errorMessage: '删除好友失败');
-      await _db.friendDao.deleteFriend(userId.value, friendId);
     } catch (e) {
       _showError('删除好友失败: $e');
     }
@@ -95,7 +109,10 @@ class ContactController extends GetxController {
 
   /// 获取好友请求列表，并更新未处理请求计数
   Future<void> fetchFriendRequests() async {
-    if (userId.value.isEmpty) return;
+
+    if(userId.isEmpty){
+      getUserId();
+    }
 
     try {
       isLoadingRequests.value = true;
@@ -131,14 +148,14 @@ class ContactController extends GetxController {
     }
   }
 
-  /// 处理好友请求（通过）
-  Future<void> handleFriendApprove(String requestId, String toId) async {
+  ///  审批联系人
+  ///  requestId 联系人请求id
+  /// approveStatus 状态 （0未审批，1同意，2拒绝）
+  Future<void> handleFriendApprove(String requestId, int approveStatus) async {
     try {
       final response = await _apiService.approveContact({
         'id': requestId,
-        'fromId': userId.value,
-        'toId': toId,
-        'approveStatus': '1',
+        'approveStatus': approveStatus,
       });
       _handleApiResponse(response, onSuccess: (_) {
         Get.snackbar('成功', '已接受好友请求');

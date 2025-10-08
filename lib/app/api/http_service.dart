@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:dio/io.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 
 import '../../config/app_config.dart';
@@ -43,7 +44,7 @@ class HttpService extends GetxService {
   /// 设置 Dio 拦截器，统一处理请求头、响应日志和错误处理
   void _setupInterceptors() {
     _dio.interceptors.add(dio.InterceptorsWrapper(
-      onRequest: (options, handler) {
+      onRequest: (options, handler) async {
         // 添加认证 Token（如果存在）
         final token = UserController.to.token.value;
         if (token.isNotEmpty) {

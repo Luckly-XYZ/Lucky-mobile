@@ -6,12 +6,6 @@ import '../../../../constants/app_message.dart';
 import '../../../controller/chat_controller.dart';
 import '../../widgets/emoji/emoji_picker.dart';
 
-/// 消息输入框组件，提供文本输入、@用户、表情选择和发送功能
-/// 特性：
-/// - 支持群聊中的@用户功能，显示用户选择抽屉。
-/// - 集成表情选择器，支持插入和删除表情。
-/// - 根据输入内容动态切换表情/发送按钮。
-/// - 点击表情按钮聚焦输入框但不唤起输入法，点击输入框唤起输入法。
 class MessageInput extends StatefulWidget {
   final TextEditingController textController; // 外部传入的文本控制器
   final ChatController controller; // 聊天控制器
@@ -27,49 +21,58 @@ class MessageInput extends StatefulWidget {
 }
 
 class _MessageInputState extends State<MessageInput> {
-  // 常量定义
-  static const _inputHeight = 36.0; // 输入框高度
-  static const _inputBorderRadius = 6.0; // 输入框圆角
-  static const _emojiPickerHeight = 250.0; // 表情选择器高度
-  static const _buttonWidth = 36.0; // 图标按钮宽度
-  static const _sendButtonWidth = 74.0; // 发送按钮宽度
-  static const _iconSize = 30.0; // 图标大小
-  static const _hintText = '输入消息...'; // 输入框提示文本
-  static const _mentionTrigger = '@'; // 触发@的字符
-  static const _animationDuration = Duration(milliseconds: 200); // 按钮切换动画时长
+  // 常量
+  static const _inputHeight = 36.0;
+  static const _inputBorderRadius = 6.0;
+  static const _emojiPickerHeight = 250.0;
+  static const _buttonWidth = 36.0;
+  static const _sendButtonWidth = 74.0;
+  static const _iconSize = 30.0;
+  static const _hintText = '输入消息...';
+  static const _mentionTrigger = '@';
+  static const _animationDuration = Duration(milliseconds: 200);
 
-  // 状态变量
-  bool _showEmojiPicker = false; // 是否显示表情选择器
-  bool _hasText = false; // 输入框是否有内容
+  // 状态
+  bool _showEmojiPicker = false;
+  bool _hasText = false;
+  bool _isReadOnly = false; // 当表情面板展示时设为 true，防止键盘弹出
 
-  // 控制器
-  late final TextEditingController _richTextController; // 富文本控制器
-  final FocusNode _focusNode = FocusNode(); // 输入框焦点
+  // 控制器/焦点
+  late final TextEditingController _richTextController;
+  final FocusNode _focusNode = FocusNode();
+
+  // 保存上次 selection（用于在失去焦点时记住光标位置，并在恢复键盘时还原）
+  TextSelection? _lastSelection;
 
   @override
   void initState() {
     super.initState();
-
-    /// 初始化控制器和监听器
     _richTextController = widget.textController;
     _richTextController.addListener(_onTextChanged);
     _richTextController.addListener(_checkForMentionTrigger);
     _focusNode.onKeyEvent = _handleKeyEvent;
+
+    // 监听焦点变化：当输入框获得焦点且表情面板打开时，关闭表情面板
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus && _showEmojiPicker) {
+        setState(() {
+          _showEmojiPicker = false;
+          _isReadOnly = false;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
-    /// 释放资源
+    // 注意：textController 是外部传入的，不在这里 dispose
     _richTextController.removeListener(_onTextChanged);
     _richTextController.removeListener(_checkForMentionTrigger);
-    _richTextController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  // --- 数据处理方法 ---
-
-  /// 监听文本变化，更新按钮显示状态
+  // --- 文本 & mention 逻辑 ---
   void _onTextChanged() {
     final hasText = _richTextController.text.trim().isNotEmpty;
     if (hasText != _hasText) {
@@ -77,7 +80,6 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 检查@触发逻辑，显示用户选择抽屉
   void _checkForMentionTrigger() {
     final text = _richTextController.text;
     final selection = _richTextController.selection;
@@ -93,7 +95,6 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
-  /// 插入@用户
   void _insertMention(String username) {
     final text = _richTextController.text;
     final selection = _richTextController.selection;
@@ -128,22 +129,35 @@ class _MessageInputState extends State<MessageInput> {
     Navigator.pop(context);
   }
 
-  /// 插入表情
+  // --- emoji 插入、回退光标等 ---
   void _insertEmoji(String emoji) {
-    final text = _richTextController.text;
-    final selection = _richTextController.selection;
-    final newText = text.substring(0, selection.baseOffset) +
-        emoji +
-        text.substring(selection.baseOffset);
-    final newCursorPosition = selection.baseOffset + emoji.length;
+    String text = _richTextController.text;
+    TextSelection sel = _richTextController.selection;
+
+    // 如果 selection 无效，尝试使用 _lastSelection 或追加到末尾
+    if (!sel.isValid) {
+      sel = _lastSelection ?? TextSelection.collapsed(offset: text.length);
+    }
+
+    final start = sel.baseOffset;
+    final newText = text.substring(0, start) + emoji + text.substring(start);
+    final newCursorPosition = start + emoji.length;
 
     _richTextController.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: newCursorPosition),
     );
+
+    // 插入表情后确保键盘保持隐藏（我们使用表情面板）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+      _focusNode.unfocus();
+      // 更新 lastSelection
+      _lastSelection = _richTextController.selection;
+    });
   }
 
-  /// 处理键盘退格键，删除整个@用户名
+  // 退格处理：删除整个@用户名
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace) {
@@ -154,7 +168,6 @@ class _MessageInputState extends State<MessageInput> {
     return KeyEventResult.ignored;
   }
 
-  /// 处理退格键逻辑，删除整个@用户名
   bool _handleBackspace() {
     final text = _richTextController.text;
     final selection = _richTextController.selection;
@@ -179,23 +192,60 @@ class _MessageInputState extends State<MessageInput> {
     return false;
   }
 
-  /// 管理焦点和输入法
-  void _manageFocus({required bool showKeyboard}) {
-    try {
-      FocusScope.of(context).requestFocus(_focusNode);
-      if (showKeyboard) {
+  // --- 焦点 / 键盘 / 表情面板 管理 ---
+
+  /// 切换表情面板显示
+  void _toggleEmojiPicker() {
+    if (!_showEmojiPicker) {
+      // 要显示表情面板：记录当前 selection，设置 readOnly，隐藏键盘并失去焦点
+      _lastSelection = _richTextController.selection;
+      setState(() {
+        _showEmojiPicker = true;
+        _isReadOnly = true;
+      });
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+      _focusNode.unfocus();
+    } else {
+      // 隐藏表情面板并唤起键盘
+      setState(() {
+        _showEmojiPicker = false;
+        _isReadOnly = false;
+      });
+
+      // 恢复焦点并还原 selection（异步执行以确保焦点生效）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(_focusNode);
+        // 还原 selection（如果有）
+        _richTextController.selection =
+            _lastSelection ?? TextSelection.collapsed(offset: _richTextController.text.length);
         SystemChannels.textInput.invokeMethod('TextInput.show');
-      } else {
-        SystemChannels.textInput.invokeMethod('TextInput.hide');
-      }
-    } catch (e) {
-      debugPrint('管理焦点失败: $e');
+      });
     }
   }
 
-  // --- UI 构建方法 ---
+  /// 当用户点击输入框时的行为
+  void _onInputTap() {
+    if (_showEmojiPicker) {
+      // 用户点击输入框：关闭表情面板并显示键盘
+      setState(() {
+        _showEmojiPicker = false;
+        _isReadOnly = false;
+      });
 
-  /// 构建@用户抽屉
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(_focusNode);
+        _richTextController.selection =
+            _lastSelection ?? TextSelection.collapsed(offset: _richTextController.text.length);
+        SystemChannels.textInput.invokeMethod('TextInput.show');
+      });
+    } else {
+      // 正常点击（保证焦点）
+      FocusScope.of(context).requestFocus(_focusNode);
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+    }
+  }
+
+  // --- UI 构建 ---
   void _showMentionDrawer() {
     showModalBottomSheet(
       context: context,
@@ -242,29 +292,19 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
-  /// 切换表情选择器显示
-  void _toggleEmojiPicker() {
-    setState(() {
-      _showEmojiPicker = !_showEmojiPicker;
-      _manageFocus(showKeyboard: false); // 聚焦输入框但不唤起输入法
-    });
-  }
-
-  /// 构建输入框
   Widget _buildInputField() {
     return Container(
       height: _inputHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(_inputBorderRadius),
-        border:
-            Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
       ),
       child: TextField(
         controller: _richTextController,
         focusNode: _focusNode,
-        onTap: () => _manageFocus(showKeyboard: true),
-        // 点击输入框唤起输入法
+        readOnly: _isReadOnly,
+        onTap: _onInputTap,
         decoration: InputDecoration(
           hintText: _hintText,
           hintStyle: Theme.of(context)
@@ -273,8 +313,7 @@ class _MessageInputState extends State<MessageInput> {
               ?.copyWith(color: Colors.grey[400]),
           border: InputBorder.none,
           isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
         style: Theme.of(context)
             .textTheme
@@ -287,10 +326,40 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
-  /// 构建按钮区域（表情/加号或发送）
   Widget _buildButtons() {
-    return AnimatedCrossFade(
-      firstChild: Row(
+    return AnimatedSwitcher(
+      duration: _animationDuration,
+      transitionBuilder: (child, animation) {
+        return ScaleTransition(scale: animation, child: child);
+      },
+      child: _hasText
+          ? SizedBox(
+        key: const ValueKey('send'),
+        width: _sendButtonWidth,
+        height: _inputHeight,
+        child: TextButton(
+          onPressed: () {
+            final text = _richTextController.text.trim();
+            if (text.isNotEmpty) {
+              widget.controller.sendMessage(text);
+              _richTextController.clear();
+              SystemChannels.textInput.invokeMethod('TextInput.hide');
+              FocusScope.of(context).requestFocus(_focusNode);
+            }
+          },
+          style: TextButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(_inputBorderRadius),
+            ),
+          ),
+          child: Text(
+            '发送',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
+          ),
+        ),
+      )
+          : Row(
         key: const ValueKey('icons'),
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -312,7 +381,6 @@ class _MessageInputState extends State<MessageInput> {
             width: _buttonWidth,
             child: IconButton(
               onPressed: () {
-                // TODO: 实现加号按钮功能（如发送图片、视频）
                 Get.snackbar('提示', '加号功能待实现');
               },
               icon: Icon(
@@ -326,48 +394,20 @@ class _MessageInputState extends State<MessageInput> {
           ),
         ],
       ),
-      secondChild: SizedBox(
-        key: const ValueKey('send'),
-        width: _sendButtonWidth,
-        height: _inputHeight,
-        child: TextButton(
-          onPressed: () {
-            final text = _richTextController.text.trim();
-            if (text.isNotEmpty) {
-              widget.controller.sendMessage(text);
-              _richTextController.clear();
-              _manageFocus(showKeyboard: false); // 发送后隐藏输入法
-            }
-          },
-          style: TextButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(_inputBorderRadius),
-            ),
-          ),
-          child: Text(
-            '发送',
-            style: Theme.of(context)
-                .textTheme
-                .labelLarge
-                ?.copyWith(color: Colors.white),
-          ),
-        ),
-      ),
-      crossFadeState:
-          _hasText ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-      duration: _animationDuration,
     );
   }
 
-  /// 构建表情选择器
   Widget _buildEmojiPicker() {
     return SizedBox(
       height: _emojiPickerHeight,
       child: EmojiPicker(
         onEmojiSelected: (emoji) {
           _insertEmoji(emoji);
-          _manageFocus(showKeyboard: false); // 插入表情后保持焦点但不唤起输入法
+          // 插入后保持表情面板和隐藏键盘
+          setState(() {
+            _showEmojiPicker = true;
+            _isReadOnly = true;
+          });
         },
         onDelete: () {
           final text = _richTextController.text;
@@ -376,8 +416,7 @@ class _MessageInputState extends State<MessageInput> {
           final lastCharIndex = text.characters.length - 1;
           if (lastCharIndex < 0) return;
 
-          _richTextController.text =
-              text.characters.take(lastCharIndex).toString();
+          _richTextController.text = text.characters.take(lastCharIndex).toString();
           _richTextController.selection = TextSelection.fromPosition(
             TextPosition(offset: _richTextController.text.length),
           );

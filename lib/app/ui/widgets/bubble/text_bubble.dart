@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/services.dart'; // 用于Clipboard
 
 import '../../../../routes/app_routes.dart';
 import '../../../models/message_receive.dart';
@@ -40,10 +41,6 @@ class _MessageBubbleState extends State<MessageBubble> {
   );
 
   // 更通用的 URL 正则（支持可选 scheme、可选 www、匹配二级及以上域名和端口与路径）
-  // 说明：
-  //  - 支持形如: https://example.com/path?x=1
-  //  - 支持形如: www.example.com 或 example.com/path
-  //  - 不会捕获包含空白的字符串
   static final RegExp _urlRegex = RegExp(
     r'((?:https?:\/\/)?(?:www\.)?[A-Za-z0-9\-._~%]+\.[A-Za-z]{2,}(?::\d{1,5})?(?:[\/?#][^\s]*)?)',
     caseSensitive: false,
@@ -67,7 +64,7 @@ class _MessageBubbleState extends State<MessageBubble> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMe) _buildAvatar(),
@@ -75,22 +72,28 @@ class _MessageBubbleState extends State<MessageBubble> {
           Flexible(
             child: Column(
               crossAxisAlignment:
-                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 _buildNameRow(),
                 const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isMe ? Colors.blue[100] : Colors.grey[200],
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isMe ? 16 : 4),
-                      bottomRight: Radius.circular(isMe ? 4 : 16),
+                GestureDetector(
+                  onLongPress: () {
+                    _showPopupMenu(context);
+                  },
+                  child: Container(
+                    key: _containerKey, // 添加key以便获取容器位置
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isMe ? Colors.blue[100] : Colors.grey[200],
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isMe ? 16 : 4),
+                        bottomRight: Radius.circular(isMe ? 4 : 16),
+                      ),
                     ),
+                    child: _buildMessageContent(context),
                   ),
-                  child: _buildMessageContent(context),
                 ),
               ],
             ),
@@ -100,6 +103,184 @@ class _MessageBubbleState extends State<MessageBubble> {
         ],
       ),
     );
+  }
+
+  // 添加一个GlobalKey用于获取Container的位置
+  final GlobalKey _containerKey = GlobalKey();
+
+  /// 改为底部横向菜单（每个 item：icon 在上，文字在下）
+  /// 菜单宽度自适应项目数量，位置避免超出屏幕边界
+  /// 调整了菜单高度以适应更小的菜单项
+  void _showPopupMenu(BuildContext context) async {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox containerBox = _containerKey.currentContext!.findRenderObject() as RenderBox;
+    final Offset position = containerBox.localToGlobal(
+      Offset.zero,
+      ancestor: overlay,
+    );
+
+    // 构建菜单项列表
+    List<Widget> menuItems = [
+      _buildPopupMenuItem('copy', Icons.copy, '复制'),
+      _buildVerticalDivider(),
+      _buildPopupMenuItem('delete', Icons.delete, '删除'),
+      _buildVerticalDivider(),
+      _buildPopupMenuItem('forward', Icons.forward, '转发'),
+    ];
+    
+    // 如果是自己的消息，添加撤回选项
+    if (widget.isMe) {
+      menuItems.insert(3, _buildVerticalDivider());
+      menuItems.insert(4, _buildPopupMenuItem('retract', Icons.undo, '撤回'));
+    }
+
+    // 计算菜单宽度：每个项目40px宽 + 分割线1px宽 + 项目间间距
+    final double itemWidth = 40.0; // 从60减少到40
+    final double dividerWidth = 1.0;
+    final double menuWidth = menuItems.length * itemWidth + 
+                            (menuItems.length ~/ 2) * dividerWidth;
+
+    // 确保菜单位置不会超出屏幕边界
+    double leftPosition = position.dx + containerBox.size.width / 2 - menuWidth / 2;
+    
+    // 避免左侧超出屏幕
+    if (leftPosition < 10) {
+      leftPosition = 10;
+    }
+    
+    // 避免右侧超出屏幕
+    if (leftPosition + menuWidth > overlay.size.width - 10) {
+      leftPosition = overlay.size.width - menuWidth - 10;
+    }
+
+    // 创建一个自定义的菜单界面，带有小箭头指向消息气泡
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent, // 透明遮罩
+      builder: (BuildContext context) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).pop(); // 点击任意位置关闭菜单
+          },
+          child: Material(
+            color: Colors.transparent,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: leftPosition,
+                  top: position.dy - 100, // 从100减少到80以适应更小的菜单项
+                  child: CustomPaint(
+                    painter: BubbleMenuPainter(),
+                    child: Container(
+                      width: menuWidth, // 自适应宽度
+                      height: 60, // 从80减少到60以适应更小的菜单项
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 2), // 为小箭头留出空间
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: menuItems,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 构建垂直分割线
+  /// 用于分隔不同的菜单项，提高视觉清晰度
+  /// 调整了高度以适应更小的菜单项
+  Widget _buildVerticalDivider() {
+    return Container(
+      width: 1,
+      height: 20, // 从30减少到20以适应更小的菜单项
+      color: Colors.grey[300],
+    );
+  }
+
+  /// 构建自定义样式的菜单项
+  /// 包含图标和文字标签，采用垂直布局（图标在上，文字在下）
+  /// 调整了尺寸使其更紧凑
+  Widget _buildPopupMenuItem(String value, IconData icon, String text) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pop(); // 关闭菜单
+        // 延迟执行操作，确保菜单已关闭
+        Future.delayed(Duration(milliseconds: 100), () {
+          switch (value) {
+            case 'copy':
+              _copyMessage();
+              break;
+            case 'delete':
+              _deleteMessage();
+              break;
+            case 'retract':
+              _retractMessage();
+              break;
+            case 'forward':
+              _forwardMessage();
+              break;
+          }
+        });
+      },
+      child: Container(
+        width: 40,  // 从60减少到40
+        padding: EdgeInsets.symmetric(horizontal: 2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: Color(0xFF409EFF)), // 图标从20减少到16
+            SizedBox(height: 2), // 间距从3减少到2
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 10, // 字体从12减少到10
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copyMessage() {
+    final text = TextMessageBody.fromMessageBody(widget.message.messageBody)?.text ?? '';
+    if (text.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: text));
+      Get.snackbar('提示', '消息已复制到剪贴板');
+    }
+  }
+
+  void _deleteMessage() {
+    // 实际项目中需要调用删除消息的API或方法
+    Get.snackbar('提示', '消息已删除');
+  }
+
+  void _retractMessage() {
+    // 实际项目中需要调用撤回消息的API或方法
+    Get.snackbar('提示', '消息已撤回');
+  }
+
+  void _forwardMessage() {
+    // 实际项目中需要跳转到转发页面
+    Get.snackbar('提示', '转发功能');
   }
 
   Widget _buildNameRow() {
@@ -155,8 +336,6 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   /// 提取文本中所有可能的 URL（未归一化）
-  /// - 会去掉 URL 前后的常见包裹符或标点，例如 "(example.com)," -> "example.com"
-  /// - 返回按出现顺序的字符串列表
   static List<String> extractUrls(String text) {
     final List<String> urls = [];
     if (text.isEmpty) return urls;
@@ -177,8 +356,6 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   /// 归一化 URL：若缺少 scheme，则自动补 https://
-  /// - 输入: "example.com/path" -> 输出: "https://example.com/path"
-  /// - 若已含 http/https 则保持不变
   static String normalizeUrl(String url) {
     if (url.isEmpty) return url;
     final trimmed = url.trim();
@@ -326,4 +503,55 @@ class _MessageBubbleState extends State<MessageBubble> {
       ),
     );
   }
+}
+
+/// 内部：表示底部菜单的一个 action
+class _PopupAction {
+  final String key;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? iconColor;
+
+  _PopupAction({
+    required this.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.iconColor,
+  });
+}
+
+/// 自定义绘制类，用于绘制带小箭头的菜单背景
+/// 箭头位置会根据菜单宽度自动居中
+/// 调整了箭头大小以适应更小的菜单
+class BubbleMenuPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    
+    // 绘制气泡菜单主体（圆角矩形）
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height - 6); // 从8减少到6
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(10));
+    path.addRRect(rrect);
+    
+    // 绘制小箭头（指向消息气泡），位置根据菜单宽度自动居中
+    // 调整了箭头大小以适应更小的菜单
+    final arrowPath = Path();
+    final centerX = size.width / 2;
+    arrowPath.moveTo(centerX - 6, size.height - 6); // 从8减少到6
+    arrowPath.lineTo(centerX, size.height);
+    arrowPath.lineTo(centerX + 6, size.height - 6); // 从8减少到6
+    arrowPath.lineTo(centerX - 6, size.height - 6); // 从8减少到6
+    path.addPath(arrowPath, Offset(0, 0));
+    
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

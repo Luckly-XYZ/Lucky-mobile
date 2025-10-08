@@ -135,8 +135,8 @@ class _WebViewPageState extends State<WebViewPage> {
 
     // 如果可以返回上一页（Get 层），则回退，否则直接回到首页
     if (Get.previousRoute.isNotEmpty) {
-      Get.back();
-    } else {
+    //   Get.back();
+    // } else {
       Get.offAllNamed(Routes.HOME);
     }
   }

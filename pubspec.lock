@@ -425,6 +425,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "7.0.1"
+  file_picker:
+    dependency: "direct main"
+    description:
+      name: file_picker
+      sha256: f2d9f173c2c14635cc0e9b14c143c49ef30b4934e8d1d274d6206fcb0086a06f
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "10.3.3"
   file_selector_linux:
     dependency: transitive
     description:
@@ -1165,6 +1173,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.5.1"
+  popup_menu:
+    dependency: "direct main"
+    description:
+      name: popup_menu
+      sha256: "85fe2b7a0c43989307000d89f736718ebb2821eb11c7cf9bd409a1a4be39c3eb"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.1.0"
   posix:
     dependency: transitive
     description:

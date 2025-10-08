@@ -48,6 +48,7 @@ dependencies:
   cached_network_image: ^3.3.0 # 网络图片缓存：头像/图片加载
   photo_view: ^0.14.0 # 图片查看器：缩放/平移
   image_cropper: ^11.0.0 # 图片裁剪：头像裁剪
+  file_picker: ^10.3.3 # 文件选择：文件上传
 
   # 通知与后台任务
   flutter_local_notifications: ^18.0.1 # 本地通知：消息提醒
@@ -68,6 +69,7 @@ dependencies:
   json_annotation: ^4.9.0  # JSON 序列化：数据模型
   protobuf: ^4.1.0 # Protobuf：高效序列化（IM 协议）
   protoc_plugin: ^22.4.0 # Protobuf 代码生成（dev 工具，但此处用于配置）
+  popup_menu: ^2.1.0 # 弹出菜单：更多操作
 
   # 加载与 UI 增强
   flutter_easyloading: ^3.0.3 # 加载动画：全局 Loading
