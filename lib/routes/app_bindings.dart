@@ -1,15 +1,15 @@
 import 'package:get/get.dart';
 
-import '../api/api_service.dart';
-import '../api/event_bus_service.dart';
-import '../api/notification_service.dart';
-import '../api/websocket_service.dart';
-import '../controller/chat_controller.dart';
-import '../controller/contact_controller.dart';
-import '../controller/home_controller.dart';
-import '../controller/login_controller.dart';
-import '../controller/search_controller.dart';
-import '../controller/user_controller.dart';
+import '../app/api/api_service.dart';
+import '../app/api/event_bus_service.dart';
+import '../app/api/notification_service.dart';
+import '../app/api/websocket_service.dart';
+import '../app/controller/chat_controller.dart';
+import '../app/controller/contact_controller.dart';
+import '../app/controller/home_controller.dart';
+import '../app/controller/login_controller.dart';
+import '../app/controller/search_controller.dart';
+import '../app/controller/user_controller.dart';
 
 class AppAllBinding extends Bindings {
   @override

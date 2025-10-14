@@ -21,7 +21,7 @@ class MessageInput extends StatefulWidget {
 }
 
 class _MessageInputState extends State<MessageInput> {
-  // 常量
+  // --- 常量 ---
   static const _inputHeight = 36.0;
   static const _inputBorderRadius = 6.0;
   static const _emojiPickerHeight = 250.0;
@@ -32,47 +32,46 @@ class _MessageInputState extends State<MessageInput> {
   static const _mentionTrigger = '@';
   static const _animationDuration = Duration(milliseconds: 200);
 
-  // 状态
+  // --- 状态 ---
   bool _showEmojiPicker = false;
   bool _hasText = false;
-  bool _isReadOnly = false; // 当表情面板展示时设为 true，防止键盘弹出
+  bool _isReadOnly = false; // 当为 true 时：输入框可聚焦但不会唤起系统键盘
 
-  // 控制器/焦点
+  // --- 控制器 / 焦点 ---
   late final TextEditingController _richTextController;
   final FocusNode _focusNode = FocusNode();
-
-  // 保存上次 selection（用于在失去焦点时记住光标位置，并在恢复键盘时还原）
-  TextSelection? _lastSelection;
+  TextSelection? _lastSelection; // 记录切换时的光标位置，便于恢复
 
   @override
   void initState() {
     super.initState();
+
+    // 使用外部传入的 controller（不在这里 dispose）
     _richTextController = widget.textController;
     _richTextController.addListener(_onTextChanged);
     _richTextController.addListener(_checkForMentionTrigger);
+
+    // 处理键盘 Backspace（删除 @username 的整段）
     _focusNode.onKeyEvent = _handleKeyEvent;
 
-    // 监听焦点变化：当输入框获得焦点且表情面板打开时，关闭表情面板
+    // 焦点监听：如果焦点获得而表情面板处于打开状态（我们想要隐藏系统键盘），则确保键盘隐藏
     _focusNode.addListener(() {
       if (_focusNode.hasFocus && _showEmojiPicker) {
-        setState(() {
-          _showEmojiPicker = false;
-          _isReadOnly = false;
-        });
+        // 保持输入框聚焦，但隐藏系统键盘
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
       }
     });
   }
 
   @override
   void dispose() {
-    // 注意：textController 是外部传入的，不在这里 dispose
     _richTextController.removeListener(_onTextChanged);
     _richTextController.removeListener(_checkForMentionTrigger);
     _focusNode.dispose();
     super.dispose();
   }
 
-  // --- 文本 & mention 逻辑 ---
+  // --- 文本监听 ---
   void _onTextChanged() {
     final hasText = _richTextController.text.trim().isNotEmpty;
     if (hasText != _hasText) {
@@ -80,10 +79,12 @@ class _MessageInputState extends State<MessageInput> {
     }
   }
 
+  // --- mention 触发检测 ---
   void _checkForMentionTrigger() {
     final text = _richTextController.text;
     final selection = _richTextController.selection;
 
+    // 只有在光标位于末尾并刚刚输入 '@' 且前面为空格或开头，且当前会话是群聊时触发
     if (selection.baseOffset > 0 &&
         selection.baseOffset == text.length &&
         text.endsWith(_mentionTrigger) &&
@@ -117,6 +118,7 @@ class _MessageInputState extends State<MessageInput> {
       return;
     }
 
+    // 将刚输入的 '@' 替换为 '@username ' 并把光标放到 username 之后
     final newText = text.substring(0, selection.baseOffset - 1) +
         '@$username ' +
         text.substring(selection.baseOffset);
@@ -129,17 +131,17 @@ class _MessageInputState extends State<MessageInput> {
     Navigator.pop(context);
   }
 
-  // --- emoji 插入、回退光标等 ---
+  // --- emoji 插入与删除 ---
   void _insertEmoji(String emoji) {
     String text = _richTextController.text;
     TextSelection sel = _richTextController.selection;
 
-    // 如果 selection 无效，尝试使用 _lastSelection 或追加到末尾
+    // 如果当前 selection 无效，使用保留的 lastSelection 或追加到末尾
     if (!sel.isValid) {
       sel = _lastSelection ?? TextSelection.collapsed(offset: text.length);
     }
 
-    final start = sel.baseOffset;
+    final start = sel.baseOffset.clamp(0, text.length);
     final newText = text.substring(0, start) + emoji + text.substring(start);
     final newCursorPosition = start + emoji.length;
 
@@ -148,22 +150,41 @@ class _MessageInputState extends State<MessageInput> {
       selection: TextSelection.collapsed(offset: newCursorPosition),
     );
 
-    // 插入表情后确保键盘保持隐藏（我们使用表情面板）
+    // 确保表情面板仍然显示，且系统键盘保持隐藏
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemChannels.textInput.invokeMethod('TextInput.hide');
-      _focusNode.unfocus();
-      // 更新 lastSelection
+      // 将焦点保持在输入框，这样会看到光标（但是 keyboard 被隐藏）
+      FocusScope.of(context).requestFocus(_focusNode);
       _lastSelection = _richTextController.selection;
     });
   }
 
-  // 退格处理：删除整个@用户名
+  // Emoji 面板上的删除按钮（利用 characters 更稳健地删除 emoji/grapheme）
+  void _deleteLastGrapheme() {
+    final text = _richTextController.text;
+    if (text.isEmpty) return;
+
+    // 使用 characters 包的 API 更稳妥（如果项目未引入 characters，请继续使用字符串操作）
+    try {
+      final chars = text.characters;
+      final shortened = chars.take(chars.length - 1).toString();
+      _richTextController.text = shortened;
+      _richTextController.selection =
+          TextSelection.collapsed(offset: _richTextController.text.length);
+    } catch (_) {
+      // 回退到最简单的做法
+      _richTextController.text =
+          text.substring(0, text.length - 1).substring (0, text.length - 1);
+      _richTextController.selection =
+          TextSelection.collapsed(offset: _richTextController.text.length);
+    }
+  }
+
+  // --- 退格特殊处理（按键事件） ---
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace) {
-      return _handleBackspace()
-          ? KeyEventResult.handled
-          : KeyEventResult.ignored;
+      return _handleBackspace() ? KeyEventResult.handled : KeyEventResult.ignored;
     }
     return KeyEventResult.ignored;
   }
@@ -172,13 +193,12 @@ class _MessageInputState extends State<MessageInput> {
     final text = _richTextController.text;
     final selection = _richTextController.selection;
 
-    if (!selection.isValid ||
-        !selection.isCollapsed ||
-        selection.baseOffset <= 0) {
+    if (!selection.isValid || !selection.isCollapsed || selection.baseOffset <= 0) {
       return false;
     }
 
     final textBeforeCursor = text.substring(0, selection.baseOffset);
+    // 匹配以空格或行首开头，最后是 @xxx 并可能以空格结尾
     final match = RegExp(r'(^|\s)@\S+\s*$').firstMatch(textBeforeCursor);
 
     if (match != null) {
@@ -192,41 +212,46 @@ class _MessageInputState extends State<MessageInput> {
     return false;
   }
 
-  // --- 焦点 / 键盘 / 表情面板 管理 ---
-
-  /// 切换表情面板显示
+  // --- 表情面板切换逻辑（关键改动） ---
+  /// 切换表情面板显示：
+  /// - 打开面板：设置 readOnly=true、记录 selection、给输入框请求焦点（显示光标）但隐藏系统键盘
+  /// - 关闭面板：设置 readOnly=false、恢复 selection、请求焦点并唤起系统键盘
   void _toggleEmojiPicker() {
     if (!_showEmojiPicker) {
-      // 要显示表情面板：记录当前 selection，设置 readOnly，隐藏键盘并失去焦点
+      // 打开表情面板：记录当前 selection 并将输入框设为 readOnly（这样 requestFocus 不会弹出键盘）
       _lastSelection = _richTextController.selection;
       setState(() {
         _showEmojiPicker = true;
         _isReadOnly = true;
       });
-      SystemChannels.textInput.invokeMethod('TextInput.hide');
-      _focusNode.unfocus();
+
+      // 请求焦点以显示光标，但同时隐藏系统键盘以保证不会弹起
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(_focusNode);
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+      });
     } else {
-      // 隐藏表情面板并唤起键盘
+      // 关闭表情面板：允许输入（readOnly=false），恢复 selection 并唤起键盘
       setState(() {
         _showEmojiPicker = false;
         _isReadOnly = false;
       });
 
-      // 恢复焦点并还原 selection（异步执行以确保焦点生效）
       WidgetsBinding.instance.addPostFrameCallback((_) {
         FocusScope.of(context).requestFocus(_focusNode);
-        // 还原 selection（如果有）
-        _richTextController.selection =
-            _lastSelection ?? TextSelection.collapsed(offset: _richTextController.text.length);
+        // 恢复 selection（如果存在）
+        _richTextController.selection = _lastSelection ??
+            TextSelection.collapsed(offset: _richTextController.text.length);
         SystemChannels.textInput.invokeMethod('TextInput.show');
       });
     }
   }
 
-  /// 当用户点击输入框时的行为
+  /// 点击输入框的行为：
+  /// - 如果当前表情面板打开，按你的实际需求我们把它关闭并唤起键盘（这是常见 UX）
+  /// - 否则正常获取焦点并唤起键盘
   void _onInputTap() {
     if (_showEmojiPicker) {
-      // 用户点击输入框：关闭表情面板并显示键盘
       setState(() {
         _showEmojiPicker = false;
         _isReadOnly = false;
@@ -234,18 +259,17 @@ class _MessageInputState extends State<MessageInput> {
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         FocusScope.of(context).requestFocus(_focusNode);
-        _richTextController.selection =
-            _lastSelection ?? TextSelection.collapsed(offset: _richTextController.text.length);
+        _richTextController.selection = _lastSelection ??
+            TextSelection.collapsed(offset: _richTextController.text.length);
         SystemChannels.textInput.invokeMethod('TextInput.show');
       });
     } else {
-      // 正常点击（保证焦点）
       FocusScope.of(context).requestFocus(_focusNode);
       SystemChannels.textInput.invokeMethod('TextInput.show');
     }
   }
 
-  // --- UI 构建 ---
+  // --- mention 列表底部弹窗 ---
   void _showMentionDrawer() {
     showModalBottomSheet(
       context: context,
@@ -292,6 +316,7 @@ class _MessageInputState extends State<MessageInput> {
     );
   }
 
+  // --- UI 构建函数 ---
   Widget _buildInputField() {
     return Container(
       height: _inputHeight,
@@ -303,8 +328,10 @@ class _MessageInputState extends State<MessageInput> {
       child: TextField(
         controller: _richTextController,
         focusNode: _focusNode,
-        readOnly: _isReadOnly,
+        readOnly: _isReadOnly, // 关键：true 时不会唤起系统键盘，但仍可聚焦显示光标
+        showCursor: true,
         onTap: _onInputTap,
+        enableInteractiveSelection: true,
         decoration: InputDecoration(
           hintText: _hintText,
           hintStyle: Theme.of(context)
@@ -321,7 +348,6 @@ class _MessageInputState extends State<MessageInput> {
             ?.copyWith(color: Colors.grey[600]),
         maxLines: 1,
         textAlignVertical: TextAlignVertical.center,
-        enableInteractiveSelection: true,
       ),
     );
   }
@@ -355,7 +381,8 @@ class _MessageInputState extends State<MessageInput> {
           ),
           child: Text(
             '发送',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
+            style:
+            Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
           ),
         ),
       )
@@ -403,23 +430,14 @@ class _MessageInputState extends State<MessageInput> {
       child: EmojiPicker(
         onEmojiSelected: (emoji) {
           _insertEmoji(emoji);
-          // 插入后保持表情面板和隐藏键盘
+          // 保持面板打开且输入框处于 readOnly（这会让光标可见但不弹键盘）
           setState(() {
             _showEmojiPicker = true;
             _isReadOnly = true;
           });
         },
         onDelete: () {
-          final text = _richTextController.text;
-          if (text.isEmpty) return;
-
-          final lastCharIndex = text.characters.length - 1;
-          if (lastCharIndex < 0) return;
-
-          _richTextController.text = text.characters.take(lastCharIndex).toString();
-          _richTextController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _richTextController.text.length),
-          );
+          _deleteLastGrapheme();
         },
       ),
     );

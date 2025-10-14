@@ -18,8 +18,7 @@ import '../models/message_receive.dart';
 import 'chat_controller.dart';
 import 'contact_controller.dart';
 
-/// 用户控制器：管理用户认证、存储、WebSocket 连接、以及与聊天/联系人控制器的联动
-/// - 保持现有逻辑不变，只对代码按用途分区并加入关键中文注释，增强可读性
+/// 用户控制器：管理用户认证、存储、WebSocket 连接
 class UserController extends GetxController with WidgetsBindingObserver {
 
   // 单例访问

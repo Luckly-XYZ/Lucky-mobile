@@ -1,4 +1,5 @@
 class AppConfig {
+  // static const String baseUrl = '192.168.31.166';
   static const String baseUrl = '192.168.31.166';
 
   // API 相关配置192.168.8.43
@@ -15,7 +16,7 @@ class AppConfig {
   static const String appDescription = '即时通讯';
   static const String appIcon = 'assets/logo.png';
   static const String appCopyright = '© 2023 im. All rights reserved.';
-  static const String deviceType = 'mobile'; // 修改为移动端
+  static const String deviceType = 'android'; // 修改为移动端
   static const String protocolType = 'proto';
   static const String defaultUrl = 'https://luckly-xyz.github.io'; // 默认url
 

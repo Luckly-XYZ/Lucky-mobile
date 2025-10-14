@@ -7,11 +7,11 @@ import 'package:get_it/get_it.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:workmanager/workmanager.dart';
 
-import './i18n/app_trans.dart';
-import './routes/app_pages.dart';
-import 'app/bindings/app_bindings.dart';
 import 'app/database/app_database.dart';
 import 'config/app_config.dart';
+import 'i18n/app_trans.dart';
+import 'routes/app_bindings.dart';
+import 'routes/app_pages.dart';
 import 'theme/app_theme_data.dart';
 
 final getIt = GetIt.instance;
@@ -67,6 +67,7 @@ class MyApp extends StatelessWidget {
       getPages: AppPages.rootRoutes,
       // 路由
       unknownRoute: AppPages.unknownRoute,
+      routingCallback: routingCallback,
       // 国际化配置
       translations: AppTranslations(),
       // 默认语言
@@ -98,6 +99,13 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// 路由回调
+void routingCallback(routing) {
+  //if (routing?.current == '/second') {
+    ///处理一些业务
+  //}
+}
+
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) {
     print('Background running: $task');
@@ -121,6 +129,7 @@ void customLogWriter(String text, {bool isError = false}) {
   debugPrint(logText);
 }
 
+/// 忽略证书
 class GlobalHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
